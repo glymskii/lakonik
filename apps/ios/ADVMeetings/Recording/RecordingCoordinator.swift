@@ -75,7 +75,14 @@ final class RecordingCoordinator {
         r.onStateChanged = { [weak self] s in Task { @MainActor in self?.recorderStateChanged(s) } }
         recorder = r
         levels.begin()
-        do { try r.start(in: dir) } catch { levels.clear(); recorder = nil; throw error }
+        do { try r.start(in: dir) } catch {
+            // Микрофон не стартовал (обычно занят звонком в другом приложении) — не оставляем «висящую» встречу
+            levels.clear(); recorder = nil; meeting = nil
+            await LocalStore.shared.remove(local.id)
+            try? await APIClient.shared.deleteMeeting(local.id)
+            NotificationCenter.default.post(name: .meetingsChanged, object: nil)
+            throw Self.describeStartError(error)
+        }
 
         elapsed = 0
         uploadedSegments = 0
@@ -85,6 +92,17 @@ final class RecordingCoordinator {
         startActivity(local)
         UIApplication.shared.isIdleTimerDisabled = false
         isPresentingRecorder = true
+    }
+
+    /// Понятное объяснение ошибки старта аудиосессии: iOS не отдаёт микрофон, пока в другом приложении идёт звонок
+    private static func describeStartError(_ error: Error) -> Error {
+        let ns = error as NSError
+        let busy: Set<Int> = [Int(AVAudioSession.ErrorCode.insufficientPriority.rawValue), Int(AVAudioSession.ErrorCode.cannotStartRecording.rawValue)]
+        guard ns.domain == NSOSStatusErrorDomain, busy.contains(ns.code) else { return error }
+        let hint = BroadcastStore.isAvailable
+            ? "Для записи онлайн-встречи используйте «Записать онлайн-встречу» в меню «+»."
+            : "Завершите звонок или запишите встречу с другого устройства."
+        return NSError(domain: "Recording", code: ns.code, userInfo: [NSLocalizedDescriptionKey: "Микрофон занят: в другом приложении идёт звонок (Meet, Zoom, телефон). \(hint)"])
     }
 
     func pause() {
