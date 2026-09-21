@@ -120,6 +120,8 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.broadcast-services-upload
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SampleHandler
+          # Валидатор App Store Connect ищет ключ прямо под NSExtension (в NSExtensionAttributes, как в шаблоне Xcode, он его «не видит»)
+          RPBroadcastProcessMode: RPBroadcastProcessModeSampleBuffer
           NSExtensionAttributes:
             RPBroadcastProcessMode: RPBroadcastProcessModeSampleBuffer
 schemes:
