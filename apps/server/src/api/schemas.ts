@@ -31,7 +31,8 @@ export const TemplateSchema = z
     organizationId: z.string().uuid().nullable().optional(),
     code: z.string(),
     version: z.number().int(),
-    group: z.enum(["internal", "client", "vendor"]),
+    /** client | internal | partner | people | notes — плюс группы приватных каталогов организаций (vendor и т.п.) */
+    group: z.string(),
     category: z.string(),
     title: z.string(),
     subtitle: z.string().nullable(),
@@ -53,7 +54,7 @@ export const TemplateSchema = z
   .openapi("Template");
 
 export const TemplateGroupSchema = z
-  .object({ code: z.enum(["internal", "client", "vendor"]), title: z.string(), subtitle: z.string(), emoji: z.string(), color: z.string(), order: z.number().int() })
+  .object({ code: z.string(), title: z.string(), subtitle: z.string(), emoji: z.string(), color: z.string(), order: z.number().int() })
   .openapi("TemplateGroup");
 
 export const TemplateCategorySchema = z.object({ code: z.string(), title: z.string(), order: z.number().int() }).openapi("TemplateCategory");

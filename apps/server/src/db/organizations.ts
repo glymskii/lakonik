@@ -3,8 +3,10 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import { db, type Db } from "./client.js";
-import { agencies, meetings, members, organizationDomains, organizations, people, settings, tasks, usageEvents, user } from "./schema/index.js";
+import { agencies, meetingTemplates, meetings, members, organizationDomains, organizations, people, settings, tasks, usageEvents, user } from "./schema/index.js";
 import type { OrgSettings } from "./types.js";
+import { seedLegacyTemplates } from "./seed.js";
+import { catalog } from "../templates/catalog.js";
 
 type Tx = Db | Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -59,15 +61,41 @@ export async function joinByDomain(tx: Tx, u: { id: string; email: string }): Pr
 }
 
 /**
+ * Старый каталог одиночного контура становится приватным каталогом организации переноса.
+ * Встречи ссылаются на шаблоны по id, поэтому ничего не теряется; системный «Без типа» остаётся встроенным.
+ *
+ * Признак того, что в слоте встроенных шаблонов всё ещё лежит старый каталог: есть код, которого нет
+ * во встроенном каталоге 1.0. Если встроенные — уже новый каталог (или их нет вовсе), не трогаем ничего,
+ * поэтому шаг идемпотентен и безопасен на любом старте.
+ */
+async function convertBuiltinTemplatesToLegacy(tx: Tx, legacyId: string): Promise<number> {
+  const rows = await tx
+    .select({ code: meetingTemplates.code })
+    .from(meetingTemplates)
+    .where(and(isNull(meetingTemplates.organizationId), sql`${meetingTemplates.group} <> 'system'`));
+  if (!rows.length) return 0;
+  const builtinCodes = new Set(catalog.templates.map((t) => t.code));
+  if (rows.every((r) => builtinCodes.has(r.code))) return 0;
+  const r = await tx.execute(
+    sql`update meeting_templates set organization_id = ${legacyId}, updated_at = now() where organization_id is null and "group" <> 'system'`,
+  );
+  logger.info({ legacyId, templates: r.rowCount ?? 0 }, "Шаблоны одиночного контура переведены в приватный каталог организации переноса");
+  return r.rowCount ?? 0;
+}
+
+/**
  * Перенос одиночного контура в организации. Идемпотентно, в одной транзакции, выполняется при каждом старте API
  * после миграций схемы:
  *  1) LEGACY_ORG_NAME задан → единая организация для всех существующих пользователей (агентства ADV / self-hosted сервер):
  *     план, места и срок из окружения, домены — из agencies и ALLOWED_EMAIL_DOMAINS, сроки и словарь STT — из старых настроек;
  *  2) каждому пользователю — личное пространство;
- *  3) встречи, задачи, люди и usage без organization_id получают организацию (legacy, иначе личную владельца).
+ *  3) встречи, задачи, люди и usage без organization_id получают организацию (legacy, иначе личную владельца);
+ *  4) каталог: старые шаблоны одиночного контура становятся приватным каталогом организации переноса,
+ *     после чего ей досеивается каталог из templates-adv.json (на свежей базе self-hosted сервера).
  */
 export async function backfillOrganizations(): Promise<void> {
   const cfg = config();
+  let legacyOrgId: string | null = null;
   await db().transaction(async (tx) => {
     const users = await tx.select({ id: user.id, name: user.name, email: user.email, role: user.role }).from(user);
 
@@ -104,6 +132,7 @@ export async function backfillOrganizations(): Promise<void> {
         logger.info({ name: cfg.LEGACY_ORG_NAME, domains, owner: owner.email }, "Создана организация переноса");
       }
     }
+    if (legacyId) await convertBuiltinTemplatesToLegacy(tx, legacyId);
     if (legacyId && users.length) {
       const ownerEmail = cfg.LEGACY_ORG_OWNER_EMAIL?.toLowerCase();
       await tx
@@ -138,7 +167,11 @@ export async function backfillOrganizations(): Promise<void> {
       moved += ro.rowCount ?? 0;
     }
     if (moved || !legacy) logger.info({ users: users.length, legacyOrg: legacyId, moved }, "Организации: перенос данных выполнен");
+    legacyOrgId = legacyId;
   });
+  // Приватный каталог организации переноса: на свежей базе (self-hosted сервер) даёт ей её шаблоны,
+  // на проде no-op — там шаблоны уже стали приватными при создании организации. Идемпотентно на каждом старте.
+  if (legacyOrgId) await seedLegacyTemplates(legacyOrgId);
 }
 
 /** Организация по умолчанию для клиентов без заголовка X-Organization-Id (старые сборки): командная организация переноса → единственная командная → личная */

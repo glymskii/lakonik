@@ -14,7 +14,7 @@ export const GLOBAL_RULES = catalog.globalRules;
  */
 export function buildSystemPrompt(t: Template): { stable: string; template: string } {
   const stable = [
-    "Ты — профессиональный ассистент, который составляет контакт-репорты и протоколы встреч по транскриптам аудиозаписей для команд, агентств и их клиентов.",
+    "Ты — профессиональный ассистент, который составляет отчёты и протоколы встреч по транскриптам аудиозаписей.",
     "",
     "ОБЩИЕ ПРАВИЛА:",
     ...GLOBAL_RULES.map((r, i) => `${i + 1}. ${r}`),
@@ -130,11 +130,11 @@ export function buildUserPrompt(t: Template, m: Meeting, tr: Transcript, revisio
   const speakers = tr.speakers ?? {};
   const roles = tr.speakerRoles ?? {};
   const selfNote = tr.selfSpeakerId
-    ? `\nВЛАДЕЛЕЦ ЗАПИСИ: ${speakerLabel(tr.selfSpeakerId, speakers, roles)} (${tr.selfSpeakerId}) — это пользователь приложения, автор отчёта, сотрудник агентства (сторона «ours»). Задачи, которые он берёт на себя («я сделаю», «беру на себя»), записывай на его имя.`
+    ? `\nВЛАДЕЛЕЦ ЗАПИСИ: ${speakerLabel(tr.selfSpeakerId, speakers, roles)} (${tr.selfSpeakerId}) — это пользователь приложения, автор отчёта, участник с нашей стороны (сторона «ours»). Задачи, которые он берёт на себя («я сделаю», «беру на себя»), записывай на его имя.`
     : "";
   const allIds = [...new Set([...tr.segments.map((s) => s.speakerId), ...Object.keys(speakers), ...Object.keys(roles)])].sort();
   const hasMap = Object.keys(speakers).length > 0 || Object.keys(roles).length > 0;
-  const roleText: Record<SpeakerRole, string> = { ours: "сотрудник агентства (сторона ours)", client: "представитель клиента (сторона client)", vendor: "представитель вендора/подрядчика (сторона vendor)" };
+  const roleText: Record<SpeakerRole, string> = { ours: "участник с нашей стороны (сторона ours)", client: "представитель клиента (сторона client)", vendor: "представитель партнёра или подрядчика (сторона vendor)" };
   const speakerLines = (hasMap
     ? "\nКАРТА СПИКЕРОВ (задана пользователем; в транскрипте используются эти подписи):\n" +
       allIds.map((id) => `- ${id} → ${speakerLabel(id, speakers, roles)}${roles[id] ? ` — ${roleText[roles[id]!]}` : ""}`).join("\n") +

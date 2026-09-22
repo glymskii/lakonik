@@ -2,91 +2,48 @@ import { describe, expect, it } from "vitest";
 import { renderMarkdown, formatDuration } from "../src/export/markdown.js";
 import { buildSystemPrompt } from "../src/llm/prompt.js";
 import { catalog } from "../src/templates/catalog.js";
+import { renderMeta, syntheticReport, templateRow } from "./fixtures/templates.js";
 
-const tpl = catalog.templates.find((t) => t.code === "client_brief")!;
-const template = {
-  id: "t1",
-  code: tpl.code,
-  version: 1,
-  organizationId: null,
-  group: tpl.group,
-  category: tpl.category,
-  title: tpl.title,
-  subtitle: tpl.subtitle,
-  goal: tpl.goal,
-  reportTitle: tpl.reportTitle,
-  emoji: "🔵",
-  color: "blue",
-  confidentiality: "standard" as const,
-  allowConfidentialityChoice: false,
-  slaHours: 24,
-  sendTo: tpl.sendTo,
-  tone: tpl.tone,
-  commonFields: catalog.commonFields,
-  specificFields: tpl.specificFields,
-  reportSections: tpl.reportSections,
-  rules: tpl.rules,
-  tips: tpl.tips,
-  sortOrder: 0,
-  isActive: true,
-  isDraft: false,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
+const byCode = (code: string) => catalog.templates.find((t) => t.code === code)!;
+
+const tpl = byCode("client_brief");
+const template = templateRow(tpl);
 
 const report = {
-  id: "r1",
-  meetingId: "m1",
-  version: 1,
-  organizationId: null,
-  templateId: "t1",
-  templateCode: "client_brief",
-  templateVersion: 1,
-  model: "claude-opus-5",
-  effort: "high",
-  title: "Nomad Summer — бриф",
+  ...syntheticReport(tpl),
+  title: "Летняя кампания — бриф",
   summary: "Клиент передал бриф на летнюю кампанию.",
-  participants: [{ name: "Айгерим", role: "медиапланер", company: "ADV", side: "ours" as const }],
   sections: [
     { key: "brief", heading: "БРИФ", content: "- Продукт: **Nomad**\n- Бюджет: 40 млн ₸" },
-    { key: "internal_comments", heading: "ВНУТРЕННИЕ КОММЕНТАРИИ", content: "Клиент торопится", internalOnly: true },
+    { key: "budget_timing", heading: "БЮДЖЕТ И СРОКИ", content: "Бюджет 40 млн ₸, старт 1 июня." },
   ],
-  actionItems: [{ assignee: "Айгерим", task: "Медиаплан", deadline: "20 мая", quote: null, done: false }],
-  decisions: [],
+  actionItems: [{ assignee: "Айгерим", task: "Медиаплан", deadline: "20 мая", deadlineDate: null, quote: null, done: false }],
   openQuestions: ["Tone of voice"],
-  clientRequests: [],
   missingInfo: ["Бюджет продакшна"],
   nextMeeting: { when: "25 мая", format: "Zoom", agenda: "Защита медиаплана" },
-  markdown: "",
-  inputTokens: 0,
-  outputTokens: 0,
-  cacheReadTokens: 0,
-  costUsd: "0",
-  createdBy: "pipeline",
-  isCurrent: true,
-  editedAt: null,
-  editedBy: null,
-  instructions: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
 };
 
-const meta = { startedAt: new Date("2026-09-14T10:00:00Z"), durationSec: 3600, platform: "Zoom", templateTitle: "Брифинг от клиента", confidentiality: "standard" as const, includeInternal: true };
+const meta = renderMeta("Бриф от клиента");
 
 describe("renderMarkdown", () => {
   it("рендерит разделы в порядке шаблона с таблицей action plan", () => {
     const md = renderMarkdown(template, report, meta);
-    expect(md).toContain("# Контакт-репорт: Брифинг от клиента");
+    expect(md).toContain("# Отчёт по встрече: бриф от клиента");
     expect(md.indexOf("## 1. РЕЗЮМЕ ЗАДАЧИ")).toBeLessThan(md.indexOf("## 3. БРИФ"));
     expect(md).toContain("| Айгерим | Медиаплан | 20 мая |");
-    expect(md).toContain("ВНУТРЕННИЕ КОММЕНТАРИИ 🔒");
     expect(md).toContain("Длительность: 1 ч");
     expect(md).toContain("- Бюджет продакшна");
+    // раздел без содержимого от модели не ломает рендер
+    expect(md).toContain("## 5. КАКОЙ РЕЗУЛЬТАТ ЖДЁТ КЛИЕНТ");
   });
+
   it("скрывает внутренние блоки для внешней версии", () => {
-    const md = renderMarkdown(template, report, { ...meta, includeInternal: false });
-    expect(md).not.toContain("ВНУТРЕННИЕ КОММЕНТАРИИ");
-    expect(md).toContain("## 5. ACTION PLAN");
+    const review = byCode("client_review");
+    const full = renderMarkdown(templateRow(review), syntheticReport(review), renderMeta(review.title));
+    const external = renderMarkdown(templateRow(review), syntheticReport(review), { ...renderMeta(review.title), includeInternal: false });
+    expect(full).toContain("ВНУТРЕННИЕ ВЫВОДЫ — НЕ ДЛЯ КЛИЕНТА 🔒");
+    expect(external).not.toContain("ВНУТРЕННИЕ ВЫВОДЫ");
+    expect(external).toContain("ЧТО ДЕЛАЕМ ДАЛЬШЕ");
   });
 });
 
@@ -101,10 +58,10 @@ describe("formatDuration", () => {
 
 describe("buildSystemPrompt", () => {
   it("содержит структуру и правила шаблона, стабильная часть не зависит от шаблона", () => {
-    const a = buildSystemPrompt(template);
+    const a = buildSystemPrompt(templateRow(byCode("client_intro")));
     expect(a.stable).toContain("ОБЩИЕ ПРАВИЛА");
     expect(a.template).toContain("ВОПРОСЫ К КЛИЕНТУ [key=client_questions; заполняется через поле openQuestions]");
-    expect(a.template).toContain("внутренний блок");
+    expect(buildSystemPrompt(templateRow(byCode("client_review"))).template).toContain("внутренний блок");
     const b = buildSystemPrompt({ ...template, code: "other", title: "Другая" });
     expect(b.stable).toBe(a.stable);
   });

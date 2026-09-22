@@ -295,13 +295,13 @@ const statusReport = await insertReport(status, await template("internal_status"
 });
 await d.update(tasks).set({ status: "done" }).where(and(eq(tasks.reportId, statusReport.id), eq(tasks.assigneeName, "Мадина Касымова")));
 
-const vendor = await insertMeeting(ownerId, await template("vendor_negotiation"), {
+const vendor = await insertMeeting(ownerId, await template("partner_negotiation"), {
   title: "Продакшн «Кадр»: условия съёмки ролика",
   startedAt: at(11, 12, 0),
   durationSec: 2460,
   platform: "Видеозвонок",
 });
-await insertReport(vendor, await template("vendor_negotiation"), {
+await insertReport(vendor, await template("partner_negotiation"), {
   title: "Переговоры с продакшном «Кадр»: условия съёмки",
   summary: "Обсудили смету и сроки съёмки ролика: продакшн готов сократить съёмочный день до одного при упрощении локаций.",
   participants: [

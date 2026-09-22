@@ -2,7 +2,7 @@ import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { and, asc, eq, isNull, ne, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { meetingTemplates } from "../../db/schema/index.js";
-import { catalog } from "../../templates/catalog.js";
+import { catalog, findGroup, type CatalogGroup } from "../../templates/catalog.js";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
 import { withOrg } from "../middleware/org.js";
 import { TemplatesResponse } from "../schemas.js";
@@ -41,7 +41,7 @@ templatesRoutes.openapi(
         organizationId: t.organizationId,
         code: t.code,
         version: t.version,
-        group: t.group as "internal" | "client" | "vendor",
+        group: t.group,
         category: t.category,
         title: t.title,
         subtitle: t.subtitle,
@@ -60,6 +60,13 @@ templatesRoutes.openapi(
         isDraft: t.isDraft,
         sortOrder: t.sortOrder,
       }));
-    return c.json({ groups: catalog.groups, categories: catalog.categories, templates }, 200);
+    // Группы: встроенные + те, что встречаются у приватных шаблонов организации (из её каталога), в этом порядке
+    const groups: CatalogGroup[] = [...catalog.groups];
+    for (const t of templates) {
+      if (groups.some((g) => g.code === t.group)) continue;
+      const g = findGroup(t.group);
+      if (g) groups.push(g);
+    }
+    return c.json({ groups, categories: catalog.categories, templates }, 200);
   },
 );
