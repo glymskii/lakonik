@@ -92,8 +92,9 @@ const briefDto = (org: typeof organizations.$inferSelect, role: Role, membersCou
 /**
  * Удаление участника из организации: конфиденциальные встречи удаляются, остальные передаются transferTo
  * (с пометкой orphanedFrom) или удаляются; задачи следуют за встречами; членство снимается.
+ * Используется также при удалении аккаунта (DELETE /api/me).
  */
-async function removeMember(tx: Tx, orgId: string, targetUserId: string, transferTo: string | null) {
+export async function removeMember(tx: Tx, orgId: string, targetUserId: string, transferTo: string | null) {
   const mine = tx.select({ id: meetings.id }).from(meetings).where(and(eq(meetings.organizationId, orgId), eq(meetings.ownerId, targetUserId)));
   await tx.delete(meetings).where(and(eq(meetings.organizationId, orgId), eq(meetings.ownerId, targetUserId), eq(meetings.confidentiality, "restricted")));
   if (transferTo) {

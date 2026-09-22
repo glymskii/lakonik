@@ -1,14 +1,19 @@
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
+import { HTTPException } from "hono/http-exception";
+import { track } from "../../analytics/amplitude.js";
 import { db } from "../../db/client.js";
-import { agencies, devices, user as userTable } from "../../db/schema/index.js";
+import { agencies, devices, organizations, user as userTable } from "../../db/schema/index.js";
 import { and, asc, ilike, or } from "drizzle-orm";
+import { logger } from "../../logger.js";
+import { revokeAppleTokens } from "../../auth/apple-revoke.js";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
 import { withOrg } from "../middleware/org.js";
 import { defaultOrganizationFor, membershipsOf } from "../../db/organizations.js";
 import { members } from "../../db/schema/index.js";
 import { sql } from "drizzle-orm";
-import { DeviceBody, MeSchema, AccountUserSchema } from "../schemas.js";
+import { removeMember } from "./organizations.js";
+import { DeleteAccountConflictSchema, DeviceBody, ErrorSchema, MeSchema, AccountUserSchema } from "../schemas.js";
 import { z } from "@hono/zod-openapi";
 
 export const meRoutes = new OpenAPIHono<AppEnv>();
@@ -80,6 +85,78 @@ meRoutes.openapi(
   async (c) => {
     const { token } = c.req.valid("param");
     await db().delete(devices).where(eq(devices.pushToken, token));
+    return c.json({ ok: true }, 200);
+  },
+);
+
+// ---------- Удаление аккаунта ----------
+
+meRoutes.openapi(
+  createRoute({
+    method: "delete",
+    path: "/",
+    tags: ["me"],
+    summary: "Удалить аккаунт со всеми данными (личное пространство, встречи, задачи)",
+    responses: {
+      200: { description: "Удалено", content: { "application/json": { schema: z.object({ ok: z.boolean() }) } } },
+      409: { description: "Пользователь — единственный владелец организации с участниками", content: { "application/json": { schema: DeleteAccountConflictSchema } } },
+      401: { description: "Требуется вход", content: { "application/json": { schema: ErrorSchema } } },
+    },
+  }),
+  async (c) => {
+    const u = c.get("user");
+    const d = db();
+    const rows = await d
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        kind: organizations.kind,
+        role: members.role,
+        membersCount: sql<number>`(select count(*) from ${members} m where m.organization_id = ${organizations.id})::int`,
+        ownerId: sql<string | null>`(select m.user_id from ${members} m where m.organization_id = ${organizations.id} and m.role = 'owner' and m.user_id <> ${u.id} limit 1)`,
+      })
+      .from(members)
+      .innerJoin(organizations, eq(organizations.id, members.organizationId))
+      .where(eq(members.userId, u.id));
+
+    const teams = rows.filter((r) => r.kind === "team");
+    // Единственный владелец организации, где есть другие участники: сначала передать владение или удалить организацию
+    const blocking = teams.filter((r) => r.role === "owner" && r.membersCount > 1);
+    if (blocking.length) {
+      const names = blocking.map((o) => `«${o.name}»`).join(", ");
+      throw new HTTPException(409, {
+        message: `Вы единственный владелец организации ${names}. Передайте владение другому участнику или удалите организацию — после этого аккаунт можно будет удалить.`,
+        res: Response.json(
+          {
+            error: `Вы единственный владелец организации ${names}. Передайте владение другому участнику или удалите организацию — после этого аккаунт можно будет удалить.`,
+            code: "account.sole_owner",
+            organizations: blocking.map((o) => ({ id: o.id, name: o.name })),
+          },
+          { status: 409 },
+        ),
+      });
+    }
+
+    // Отзыв токена Apple — до удаления аккаунта, пока в таблице account есть токены
+    const apple = await revokeAppleTokens(u.id);
+
+    await d.transaction(async (tx) => {
+      for (const org of rows) {
+        if (org.kind === "personal" || org.membersCount <= 1) {
+          // Личное пространство и командные организации, где пользователь был один, удаляются со всеми данными
+          await tx.delete(organizations).where(eq(organizations.id, org.id));
+          continue;
+        }
+        // Участник или администратор: встречи уходят владельцу организации (конфиденциальные удаляются)
+        await removeMember(tx, org.id, u.id, org.ownerId ?? null);
+      }
+      await tx.delete(devices).where(eq(devices.userId, u.id));
+      // Каскад удалит сессии, привязки провайдеров, подписки и остатки данных пользователя
+      await tx.delete(userTable).where(eq(userTable.id, u.id));
+    });
+
+    track(u.id, "account_deleted", { organizations: teams.length, appleRevoked: apple.revoked });
+    logger.info({ userId: u.id, email: u.email, organizations: rows.length, appleRevoked: apple.revoked, appleSkipped: apple.skipped }, "Аккаунт удалён");
     return c.json({ ok: true }, 200);
   },
 );

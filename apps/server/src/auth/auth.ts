@@ -44,8 +44,8 @@ function buildSocialProviders() {
   return providers;
 }
 
-/** JWT client secret для Sign in with Apple (ES256, срок 6 месяцев). */
-async function generateAppleClientSecret(clientId: string, teamId: string, keyId: string, privateKeyPem: string) {
+/** JWT client secret для Sign in with Apple (ES256, срок 6 месяцев). Нужен и для отзыва токена при удалении аккаунта. */
+export async function generateAppleClientSecret(clientId: string, teamId: string, keyId: string, privateKeyPem: string) {
   const { SignJWT, importPKCS8 } = await import("jose");
   const key = await importPKCS8(privateKeyPem.replace(/\\n/g, "\n"), "ES256");
   return new SignJWT({})

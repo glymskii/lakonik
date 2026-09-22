@@ -438,6 +438,14 @@ export const AppleTransactionBody = z
 
 export const AppleNotificationBody = z.object({ signedPayload: z.string().min(20) }).openapi("AppleNotificationBody");
 
+export const DeleteAccountConflictSchema = z
+  .object({
+    error: z.string(),
+    code: z.literal("account.sole_owner"),
+    organizations: z.array(z.object({ id: z.string().uuid(), name: z.string() })),
+  })
+  .openapi("DeleteAccountConflict");
+
 export const AccountUserSchema = z
   .object({ id: z.string(), name: z.string(), email: z.string(), agencyId: z.string().nullable(), agencyName: z.string().nullable() })
   .openapi("AccountUser");
