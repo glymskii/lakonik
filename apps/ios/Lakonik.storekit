@@ -1,0 +1,157 @@
+{
+  "identifier": "EF9D95CF-B6B3-44C1-AB08-DE2A027FCC55",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_applicationInternalID": "6812003830",
+    "_developerTeamID": "JWL983DY46",
+    "_lastSynchronizedDate": 0
+  },
+  "subscriptionGroups": [
+    {
+      "id": "BC79635F-407F-457A-B663-9C4E2C3F71E9",
+      "localizations": [],
+      "name": "Lakonik Plans",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "24.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "187521F2-EB46-4A3C-894C-97C9D677F5EC",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Безлимит (месяц)",
+              "displayName": "Безлимит (месяц)",
+              "locale": "ru_RU"
+            }
+          ],
+          "productID": "lakonik.unlimited.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Безлимит (месяц)",
+          "subscriptionGroupID": "BC79635F-407F-457A-B663-9C4E2C3F71E9",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "239.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "D45162B7-35EF-4F89-AE78-5EFEFA5A21F7",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Безлимит (год)",
+              "displayName": "Безлимит (год)",
+              "locale": "ru_RU"
+            }
+          ],
+          "productID": "lakonik.unlimited.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Безлимит (год)",
+          "subscriptionGroupID": "BC79635F-407F-457A-B663-9C4E2C3F71E9",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "9.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "9635B7EB-E9A2-497C-A7E0-F3759014FD3E",
+          "introductoryOffer": {
+            "internalID": "CE726462-5761-4665-9E8D-5E893E0AB809",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
+          },
+          "localizations": [
+            {
+              "description": "Pro (месяц)",
+              "displayName": "Pro (месяц)",
+              "locale": "ru_RU"
+            }
+          ],
+          "productID": "lakonik.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Pro (месяц)",
+          "subscriptionGroupID": "BC79635F-407F-457A-B663-9C4E2C3F71E9",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "95.99",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "599FE950-73F8-4D46-B57C-FBFFC843B68E",
+          "introductoryOffer": {
+            "internalID": "55DBBF75-95B8-48BB-9865-354BE7285407",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
+          },
+          "localizations": [
+            {
+              "description": "Pro (год)",
+              "displayName": "Pro (год)",
+              "locale": "ru_RU"
+            }
+          ],
+          "productID": "lakonik.pro.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Pro (год)",
+          "subscriptionGroupID": "BC79635F-407F-457A-B663-9C4E2C3F71E9",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4.99",
+          "familyShareable": false,
+          "groupNumber": 3,
+          "internalID": "86191292-C837-42F7-AFEA-F138776BB3F1",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Starter (месяц)",
+              "displayName": "Starter (месяц)",
+              "locale": "ru_RU"
+            }
+          ],
+          "productID": "lakonik.starter.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Starter (месяц)",
+          "subscriptionGroupID": "BC79635F-407F-457A-B663-9C4E2C3F71E9",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "47.99",
+          "familyShareable": false,
+          "groupNumber": 3,
+          "internalID": "4346C688-C1C3-4906-9629-4B146608619F",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Starter (год)",
+              "displayName": "Starter (год)",
+              "locale": "ru_RU"
+            }
+          ],
+          "productID": "lakonik.starter.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Starter (год)",
+          "subscriptionGroupID": "BC79635F-407F-457A-B663-9C4E2C3F71E9",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

@@ -141,5 +141,6 @@ schemes:
         Lakonik: all
     run:
       config: Debug
+      storeKitConfiguration: Lakonik.storekit # тестовые подписки в симуляторе без App Store Connect
     archive:
       config: Release

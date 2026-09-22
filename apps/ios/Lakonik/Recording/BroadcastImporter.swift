@@ -43,7 +43,7 @@ final class BroadcastImporter {
         do {
             let mixed = try await mix(app: m.hasAppAudio ? appURL : nil, appStart: m.appStartSec, mic: m.hasMicAudio ? micURL : nil, micStart: m.micStartSec, id: m.id)
             let title = "Онлайн-встреча \(m.startedAt.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year().hour().minute().locale(Locale(identifier: "ru_RU"))))"
-            let created = try await APIClient.shared.createMeeting(CreateMeetingBody(templateId: nil, title: title, source: "imported", startedAt: ISO8601DateFormatter.fractional.string(from: m.startedAt), platform: "Онлайн-встреча", deviceId: UIDevice.current.identifierForVendor?.uuidString))
+            let created = try await APIClient.shared.createMeeting(CreateMeetingBody(templateId: nil, title: title, source: "imported", startedAt: ISO8601DateFormatter.fractional.string(from: m.startedAt), platform: "Онлайн-встреча", deviceId: UIDevice.current.identifierForVendor?.uuidString, online: true))
             try await RecordingCoordinator.shared.importFile(mixed, serverMeeting: created, template: nil)
             var done = m
             done.imported = true

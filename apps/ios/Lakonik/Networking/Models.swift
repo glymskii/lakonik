@@ -520,8 +520,56 @@ struct CreateMeetingBody: Encodable {
     var platform: String?
     var confidentiality: String?
     var deviceId: String?
+    /// Запись онлайн-встречи через трансляцию — доступна с тарифа Pro
+    var online: Bool?
 }
 
+/// Тариф и лимиты пользователя (или пул организации на Enterprise) — GET /api/billing/entitlement
+struct Entitlement: Codable, Hashable {
+    struct Limits: Codable, Hashable {
+        let maxRecordingSec: Int
+        let monthlyLimitSec: Int?
+        let dailyRecordings: Int?
+        let onlineMeetings: Bool
+        let model: String // draft | full
+    }
+    struct Usage: Codable, Hashable {
+        let monthlySec: Int
+        let dailyCount: Int
+        let monthResetsAt: Date
+        let dayResetsAt: Date
+    }
+    struct Subscription: Codable, Hashable {
+        let productId: String
+        let tier: String
+        let expiresAt: Date?
+        let autoRenew: Bool
+        let status: String
+        let environment: String
+    }
+    let tier: String // free | starter | pro | unlimited | enterprise
+    let source: String // free | subscription | enterprise
+    let limits: Limits
+    let usage: Usage
+    let subscription: Subscription?
+    var appAccountToken: String?
+
+    var tierTitle: String {
+        switch tier { case "starter": return "Starter"; case "pro": return "Pro"; case "unlimited": return "Безлимит"; case "enterprise": return "Enterprise"; default: return "Free" }
+    }
+    var isPaid: Bool { tier != "free" }
+}
+
+struct SubmitTransactionBody: Encodable { let jws: String }
+
+/// Ошибка квоты (HTTP 402): что именно исчерпано и когда обновится
+struct QuotaErrorBody: Decodable {
+    let error: String
+    let code: String
+    let limit: Int?
+    let used: Int?
+    let resetsAt: Date?
+}
 struct UpdateMeetingBody: Encodable {
     var templateId: String?
     var title: String?

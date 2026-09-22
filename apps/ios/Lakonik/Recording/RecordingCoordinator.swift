@@ -87,6 +87,8 @@ final class RecordingCoordinator {
         elapsed = 0
         uploadedSegments = 0
         totalSegments = 0
+        limitStopping = false
+        limitReached = false
         phase = .recording
         startTimer()
         startActivity(local)
@@ -369,7 +371,18 @@ final class RecordingCoordinator {
 
     private func stopTimer() { timer?.invalidate(); timer = nil }
 
-    private func tick() { elapsed = levels.now }
+    private func tick() {
+        elapsed = levels.now
+        // Лимит длительности записи по тарифу: останавливаем на границе, запись сохраняется и обрабатывается
+        if phase == .recording, let limit = EntitlementStore.shared.maxRecordingSec, elapsed >= Double(limit), !limitStopping {
+            limitStopping = true
+            limitReached = true
+            Task { await stop() }
+        }
+    }
+    private var limitStopping = false
+    /// Запись остановлена по лимиту тарифа — экран записи показывает предложение апгрейда
+    var limitReached = false
 
     private func startActivity(_ m: LocalMeeting) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }

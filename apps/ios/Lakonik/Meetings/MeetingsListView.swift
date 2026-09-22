@@ -16,6 +16,9 @@ struct MeetingsListView: View {
     @State private var startError: String?
     @State private var showOnline = false
     @State private var broadcast: BroadcastManifest?
+    @State private var paywallReason: String?
+    @State private var showPaywall = false
+    @State private var entitlements = EntitlementStore.shared
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -63,7 +66,9 @@ struct MeetingsListView: View {
                     Menu {
                         Button { Task { await startRecording() } } label: { Label("Записать встречу", systemImage: "record.circle") }
                         if BroadcastStore.isAvailable {
-                            Button { showOnline = true } label: { Label("Записать онлайн-встречу (Meet, Zoom)", systemImage: "video.badge.waveform") }
+                            Button {
+                                if entitlements.onlineMeetingsAllowed { showOnline = true } else { paywallReason = "feature.online_meetings"; showPaywall = true }
+                            } label: { Label("Записать онлайн-встречу (Meet, Zoom)", systemImage: entitlements.onlineMeetingsAllowed ? "video.badge.waveform" : "lock") }
                         }
                         Button { showImporter = true } label: { Label("Импортировать аудио / видео", systemImage: "square.and.arrow.down") }
                     } label: { Label("Добавить", systemImage: "plus") }
@@ -92,6 +97,8 @@ struct MeetingsListView: View {
             }
             .task {
                 broadcast = BroadcastStore.active()
+                entitlements.start()
+                await entitlements.refresh()
                 await templates.refresh()
                 await load()
                 await BroadcastImporter.shared.importFinished()
@@ -100,10 +107,12 @@ struct MeetingsListView: View {
                 PushRegistrar.shared.onOpenMeeting = { id in path.append(id) }
             }
             .sheet(isPresented: $showOnline) { OnlineMeetingView() }
+            .sheet(isPresented: $showPaywall) { PaywallView(reason: paywallReason) }
+            .onChange(of: recorder.limitReached) { _, hit in if hit { paywallReason = "quota.duration"; showPaywall = true } }
             .onReceive(NotificationCenter.default.publisher(for: .meetingsChanged)) { _ in Task { await load() } }
             .onReceive(NotificationCenter.default.publisher(for: .workspaceChanged)) { _ in
                 items = []
-                Task { await templates.refresh(force: true); await load() }
+                Task { await templates.refresh(force: true); await load(); await entitlements.refresh() }
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -130,6 +139,8 @@ struct MeetingsListView: View {
         do {
             let created = try await APIClient.shared.createMeeting(CreateMeetingBody(templateId: nil, deviceId: UIDevice.current.identifierForVendor?.uuidString))
             try await recorder.start(serverMeeting: created, template: nil)
+        } catch APIError.quota(let code, _, _, _, _) {
+            paywallReason = code; showPaywall = true
         } catch {
             startError = error.localizedDescription
         }
@@ -142,6 +153,8 @@ struct MeetingsListView: View {
         do {
             let created = try await APIClient.shared.createMeeting(CreateMeetingBody(templateId: nil, title: url.deletingPathExtension().lastPathComponent, source: "imported", deviceId: UIDevice.current.identifierForVendor?.uuidString))
             try await recorder.importFile(url, serverMeeting: created, template: nil)
+        } catch APIError.quota(let code, _, _, _, _) {
+            paywallReason = code; showPaywall = true
         } catch {
             startError = error.localizedDescription
         }

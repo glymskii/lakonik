@@ -12,6 +12,8 @@ struct SettingsView: View {
     @State private var deleteError: String?
     @State private var name = ""
     @State private var workspace = WorkspaceStore.shared
+    @State private var showPaywall = false
+    @State private var entitlements = EntitlementStore.shared
 
     var body: some View {
         NavigationStack {
@@ -58,6 +60,23 @@ struct SettingsView: View {
                     Text("Пространства")
                 } footer: {
                     Text("Галочкой отмечено активное пространство — в нём создаются записи. Переключить можно и в списке встреч.")
+                }
+                Section {
+                    Button { showPaywall = true } label: {
+                        HStack {
+                            Label("Тариф", systemImage: "star.circle")
+                            Spacer()
+                            Text(entitlements.entitlement?.tierTitle ?? "—").foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                } footer: {
+                    if let e = entitlements.entitlement, let limit = e.limits.monthlyLimitSec {
+                        Text("Использовано \(Fmt.hours(e.usage.monthlySec)) из \(Fmt.hours(limit)) в этом месяце.")
+                    } else if let e = entitlements.entitlement, e.tier == "free" {
+                        Text("Бесплатно: записи до 5 минут, до 5 записей в день.")
+                    }
                 }
                 Section("Задачи и сроки") {
                     NavigationLink { DeadlineSettingsView() } label: { Label("Сроки задач и отчётов", systemImage: "calendar.badge.clock") }
@@ -110,7 +129,8 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Настройки")
-            .task { await reload(); name = auth.me?.name ?? "" }
+            .task { await reload(); name = auth.me?.name ?? ""; await entitlements.refresh() }
+            .sheet(isPresented: $showPaywall) { PaywallView() }
             .onChange(of: auth.me?.name) { _, v in if let v, name.isEmpty { name = v } }
             .confirmationDialog("Выйти из аккаунта?", isPresented: $confirmSignOut) {
                 Button("Выйти", role: .destructive) { Task { await auth.signOut() } }

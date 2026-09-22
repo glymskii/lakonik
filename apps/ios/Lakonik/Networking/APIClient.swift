@@ -3,6 +3,8 @@ import os
 
 enum APIError: LocalizedError {
     case unauthorized
+    /// Лимит тарифа (HTTP 402): code — quota.daily | quota.duration | quota.monthly | feature.online_meetings
+    case quota(code: String, message: String, limit: Int?, used: Int?, resetsAt: Date?)
     case server(status: Int, message: String)
     case network(Error)
     case decoding(Error)
@@ -10,6 +12,7 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unauthorized: return "Требуется вход"
+        case .quota(_, let message, _, _, _): return message
         case .server(_, let message): return message
         case .network(let e): return "Нет связи с сервером: \(e.localizedDescription)"
         case .decoding: return "Не удалось разобрать ответ сервера"
@@ -90,6 +93,10 @@ final class APIClient {
             onUnauthorized?()
             throw APIError.unauthorized
         }
+        if status == 402, let q = try? decoder.decode(QuotaErrorBody.self, from: data) {
+            log.info("\(method) \(path) -> 402 \(q.code)")
+            throw APIError.quota(code: q.code, message: q.error, limit: q.limit, used: q.used, resetsAt: q.resetsAt)
+        }
         guard (200..<300).contains(status) else {
             let msg = (try? decoder.decode(APIErrorBody.self, from: data))?.error ?? "Ошибка сервера (\(status))"
             log.error("\(method) \(path) -> \(status): \(msg)")
@@ -146,6 +153,10 @@ extension APIClient {
     func signOut() async throws { try await raw("POST", "/api/auth/sign-out", body: EmptyBody()) }
     func me() async throws -> Me { try await request("GET", "/api/me") }
     func deleteAccount() async throws { try await raw("DELETE", "/api/me") }
+
+    // MARK: Тариф и покупки
+    func entitlement() async throws -> Entitlement { try await request("GET", "/api/billing/entitlement") }
+    func submitTransaction(jws: String) async throws -> Entitlement { try await request("POST", "/api/billing/apple/transactions", body: SubmitTransactionBody(jws: jws)) }
 
     // MARK: Организации
     func createOrganization(name: String) async throws -> Organization { try await request("POST", "/api/organizations", body: CreateOrgBody(name: name)) }
