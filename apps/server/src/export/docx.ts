@@ -68,19 +68,26 @@ function runs(text: string): TextRun[] {
   });
 }
 
+/** Ширина текстовой области A4 при полях 2,54 см — в DXA (1/20 пункта) */
+const PAGE_WIDTH_DXA = 9026;
+
 function table(columns: string[], rows: string[][]): Table {
   const border = { style: BorderStyle.SINGLE, size: 4, color: "BFBFBF" };
-  const cell = (text: string, header = false) =>
+  // Без явных ширин Word (в отличие от Pages/LibreOffice) показывает таблицу схлопнутой — колонки нулевой ширины
+  const widths = columns.length === 3 ? [0.25, 0.5, 0.25].map((f) => Math.round(PAGE_WIDTH_DXA * f)) : columns.map(() => Math.round(PAGE_WIDTH_DXA / columns.length));
+  const cell = (text: string, ci: number, header = false) =>
     new TableCell({
+      width: { size: widths[ci] ?? Math.round(PAGE_WIDTH_DXA / columns.length), type: WidthType.DXA },
       children: [new Paragraph({ children: [new TextRun({ text, bold: header, font: FONT, size: 20 })] })],
       shading: header ? { fill: "EDEDED" } : undefined,
       borders: { top: border, bottom: border, left: border, right: border },
     });
   return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: PAGE_WIDTH_DXA, type: WidthType.DXA },
+    columnWidths: widths,
     rows: [
-      new TableRow({ tableHeader: true, children: columns.map((c) => cell(c, true)) }),
-      ...rows.map((r) => new TableRow({ children: columns.map((_, ci) => cell(r[ci] ?? "")) })),
+      new TableRow({ tableHeader: true, children: columns.map((c, ci) => cell(c, ci, true)) }),
+      ...rows.map((r) => new TableRow({ children: columns.map((_, ci) => cell(r[ci] ?? "", ci)) })),
     ],
   });
 }
