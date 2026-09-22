@@ -2,10 +2,11 @@
   "name": "@lakonik/shared",
   "version": "0.1.0",
   "private": true,
-  "description": "Общие артефакты: шаблоны контакт-репортов ADV, JSON-схема отчёта",
+  "description": "Общие артефакты: встроенный каталог типов встреч, приватный каталог организации переноса, JSON-схема отчёта",
   "type": "module",
   "exports": {
-    "./templates.json": "./templates.json"
+    "./templates.json": "./templates.json",
+    "./templates-adv.json": "./templates-adv.json"
   },
-  "files": ["templates.json", "templates.raw.json"]
+  "files": ["templates.json", "templates-adv.json"]
 }

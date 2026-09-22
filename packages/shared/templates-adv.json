@@ -1,0 +1,575 @@
+{
+  "$comment": "Курируемые шаблоны контакт-репортов ADV Kazakhstan. Источник: docs/source/ADV Contact Report Router 2026.xlsx (сырой дамп — templates.raw.json). Секции с kind != text рендерятся из структурированных полей отчёта (actionItems, decisions, openQuestions, nextMeeting, participants), а не из свободного текста.",
+  "version": 1,
+  "groups": [
+    { "code": "internal", "title": "Внутренняя", "subtitle": "без клиента", "emoji": "🔴", "color": "red", "order": 1 },
+    { "code": "client", "title": "С клиентом", "subtitle": "внешняя встреча", "emoji": "🔵", "color": "blue", "order": 2 },
+    { "code": "vendor", "title": "С вендором / партнёром", "subtitle": "медиаселлер, продакшн, подрядчик", "emoji": "🟡", "color": "yellow", "order": 3 }
+  ],
+  "categories": [
+    { "code": "sales", "title": "Продажи и новый бизнес", "order": 1 },
+    { "code": "production", "title": "Производство и клиентский сервис", "order": 2 },
+    { "code": "operations", "title": "Операционка и статусы", "order": 3 },
+    { "code": "management", "title": "Управление и стратегия", "order": 4 },
+    { "code": "hr", "title": "Команда и HR", "order": 5 }
+  ],
+  "commonFields": [
+    { "key": "participants", "label": "Участники", "hint": "имя · роль · компания/агентство", "type": "list" },
+    { "key": "platform", "label": "Место / платформа", "hint": "офис / Zoom / Teams / Google Meet", "type": "text" }
+  ],
+  "globalRules": [
+    "Используй только факты из транскрипта и контекста встречи. Ничего не выдумывай и не додумывай.",
+    "Если информация для раздела или поля не прозвучала — напиши «не озвучено, уточнить» и добавь пункт в missingInfo.",
+    "Имена участников бери из карты спикеров и контекста; если спикер не идентифицирован — называй его «Спикер N».",
+    "Действия (action items) формулируй как конкретную задачу с ответственным и дедлайном. Если ответственный или дедлайн не названы — укажи null и добавь вопрос в openQuestions.",
+    "Названия брендов, продуктов, каналов, метрик и термины оставляй в оригинале (в том числе на английском и казахском), не переводи.",
+    "Язык отчёта — русский. Пиши структурированно, по существу, без воды и без общих фраз.",
+    "Числа (бюджеты, KPI, сроки, доли) указывай точно так, как прозвучали, с единицами измерения.",
+    "Разделы, помеченные как внутренние (не для клиента), пиши откровенно — они не отправляются внешней стороне."
+  ],
+  "templates": [
+    {
+      "code": "client_intro",
+      "group": "client",
+      "category": "sales",
+      "sheet": "🔵 Клиент-Знакомство",
+      "title": "Знакомство с клиентом",
+      "subtitle": "First contact / new business",
+      "goal": "Первая встреча · цель — узнать клиента, его потребности и открыть возможность для сотрудничества",
+      "reportTitle": "Контакт-репорт: Знакомство с клиентом",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "New Business директор + CEO",
+      "tone": "профессиональный, деловой",
+      "specificFields": [
+        { "key": "client_company", "label": "Компания клиента и индустрия", "type": "text", "askBeforeRecording": true },
+        { "key": "key_contact", "label": "Имя и должность ключевого контакта", "type": "text", "askBeforeRecording": true },
+        { "key": "lead_source", "label": "Как вышли на клиента", "hint": "рекомендация / тендер / холодный контакт", "type": "text", "askBeforeRecording": true },
+        { "key": "client_tasks", "label": "Текущие задачи клиента по его словам", "type": "text" },
+        { "key": "pains", "label": "Боли и проблемы, которые он упомянул", "type": "text" },
+        { "key": "interest", "label": "Интерес к нашим услугам (что зацепило)", "type": "text" },
+        { "key": "competitors", "label": "Конкуренты, которых упомянул или с кем работает сейчас", "type": "text" },
+        { "key": "budget", "label": "Бюджет (если прозвучал)", "type": "text" },
+        { "key": "next_step", "label": "Следующий шаг / договорённость", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ", "kind": "text", "guidance": "3–4 предложения — суть встречи одним абзацем." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "Имена, роли, компания." },
+        { "key": "about_client", "heading": "О КЛИЕНТЕ", "kind": "text", "guidance": "Компания, индустрия, текущая ситуация, как вышли на клиента." },
+        { "key": "needs", "heading": "ПОТРЕБНОСТИ И БОЛИ", "kind": "text", "guidance": "Что клиент хочет решить. Дословные цитаты клиента — они важны для КП." },
+        { "key": "opportunities", "heading": "ВОЗМОЖНОСТИ ДЛЯ АГЕНТСТВА", "kind": "text", "guidance": "Что мы можем предложить, что зацепило клиента." },
+        { "key": "competitors", "heading": "КОНКУРЕНТЫ / ТЕКУЩИЕ ПАРТНЁРЫ", "kind": "text", "guidance": "Если упомянуты. Названный конкурент — сигнал для бенчмарка." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя ответственного] | [Задача] | [Дедлайн]" },
+        { "key": "next_meeting", "heading": "СЛЕДУЮЩАЯ ВСТРЕЧА", "kind": "next_meeting", "guidance": "Дата, формат, цель." },
+        { "key": "impression", "heading": "ОБЩЕЕ ВПЕЧАТЛЕНИЕ И РЕКОМЕНДАЦИЯ", "kind": "text", "guidance": "Оценка лида: продолжать / пауза / приоритет — и почему. Помогает команде приоритизировать лиды." }
+      ],
+      "rules": [
+        "Фиксируй дословные цитаты клиента о потребностях и болях — они важны для коммерческого предложения.",
+        "Если бюджет не назван — напиши «не озвучен, уточнить».",
+        "В разделе «Общее впечатление» дай явную рекомендацию: продолжать / пауза / приоритет."
+      ],
+      "tips": [
+        "Записывай сразу после встречи — детали теряются через 2 часа",
+        "Фиксируй дословные цитаты клиента — они важны для КП",
+        "Если клиент назвал конкурента — это сигнал для бенчмарка",
+        "Оценка «общее впечатление» помогает команде приоритизировать лиды"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "client_brief",
+      "group": "client",
+      "category": "production",
+      "sheet": "🔵 Клиент-Брифинг",
+      "title": "Брифинг от клиента",
+      "subtitle": "Клиент передаёт задачу",
+      "goal": "Клиент передаёт задачу · цель — зафиксировать все требования, сроки, бюджет и ожидания",
+      "reportTitle": "Контакт-репорт: Брифинг от клиента",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "Вся команда на проекте",
+      "tone": "профессиональный",
+      "specificFields": [
+        { "key": "campaign", "label": "Название кампании / проекта", "type": "text", "askBeforeRecording": true },
+        { "key": "product", "label": "Продукт / услуга / бренд", "type": "text", "askBeforeRecording": true },
+        { "key": "objective", "label": "Цель кампании", "hint": "осведомлённость / продажи / лиды", "type": "text" },
+        { "key": "audience", "label": "Целевая аудитория (описание клиентом)", "type": "text" },
+        { "key": "budget", "label": "Бюджет", "hint": "общий / медиа / продакшн", "type": "text" },
+        { "key": "timing", "label": "Сроки кампании", "hint": "флайты, дедлайны", "type": "text" },
+        { "key": "channels", "label": "Каналы, которые хочет клиент", "type": "text" },
+        { "key": "kpi", "label": "KPI и метрики успеха", "type": "text" },
+        { "key": "constraints", "label": "Ограничения и требования", "hint": "tone of voice / запреты", "type": "text" },
+        { "key": "response_deadline", "label": "Дедлайн на наш ответ", "hint": "КП / медиаплан / презентация", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ ЗАДАЧИ", "kind": "text", "guidance": "2–3 предложения — суть проекта." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "Обязательно укажи, кто на стороне клиента утвердил бриф." },
+        { "key": "brief", "heading": "БРИФ", "kind": "text", "guidance": "Структурированно, подпунктами: Продукт/бренд · Цель кампании · Целевая аудитория · Бюджет · Сроки · Каналы · KPI · Ограничения. Для отсутствующего пункта — «не озвучено, уточнить»." },
+        { "key": "client_questions", "heading": "ВОПРОСЫ К КЛИЕНТУ", "kind": "open_questions", "guidance": "Что осталось открытым и что нужно уточнить у клиента до старта работы. Критичный блок." },
+        { "key": "internal_comments", "heading": "ВНУТРЕННИЕ КОММЕНТАРИИ", "kind": "text", "internalOnly": true, "guidance": "Наше первое мнение о задаче — только для внутреннего использования, клиенту не отправлять." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя ответственного] | [Задача] | [Дедлайн]" },
+        { "key": "response_deadline", "heading": "ДЕДЛАЙН НА ОТВЕТ КЛИЕНТУ", "kind": "text", "guidance": "Дата и формат ответа: КП / медиаплан / презентация." }
+      ],
+      "rules": [
+        "Всегда фиксируй, кто именно утвердил бриф на стороне клиента.",
+        "Если бюджет не назван — напиши «не озвучен, уточнить».",
+        "Блок «Вопросы к клиенту» — самый важный: без ответов нельзя начинать работу. Собери все неясности.",
+        "Внутренние комментарии — только для команды, клиенту не отправляются."
+      ],
+      "tips": [
+        "Всегда фиксируй кто именно утвердил бриф на стороне клиента",
+        "Если бюджет не назван — напиши «не озвучен, уточнить»",
+        "Блок «вопросы» — самый важный. Без ответов нельзя начинать работу",
+        "Внутренние комментарии не отправлять клиенту — только внутри команды"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "client_status",
+      "group": "client",
+      "category": "operations",
+      "sheet": "🔵 Клиент-Статус",
+      "title": "Статус проекта с клиентом",
+      "subtitle": "Регулярная встреча по ходу кампании",
+      "goal": "Регулярная встреча по ходу кампании · цель — синхронизация, план-факт, решение вопросов",
+      "reportTitle": "Контакт-репорт: Статус проекта с клиентом",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "Клиент + команда",
+      "tone": "деловой, конкретный",
+      "specificFields": [
+        { "key": "campaign", "label": "Название проекта / кампании", "type": "text", "askBeforeRecording": true },
+        { "key": "stage", "label": "Этап кампании", "hint": "подготовка / запуск / активная / завершение", "type": "text", "askBeforeRecording": true },
+        { "key": "period", "label": "Период отчётности", "type": "text" },
+        { "key": "kpi", "label": "Основные показатели план vs факт (кратко)", "type": "text" },
+        { "key": "going_well", "label": "Что идёт хорошо", "type": "text" },
+        { "key": "needs_decision", "label": "Что требует решения / согласования", "type": "text" },
+        { "key": "from_client", "label": "Вопросы и решения, которые нужны от клиента", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ ВСТРЕЧИ", "kind": "text", "guidance": "2–3 предложения." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "status", "heading": "СТАТУС ПРОЕКТА", "kind": "text", "guidance": "Подпункты: Этап · Ключевые показатели план vs факт (всегда с числами) · Что работает хорошо · Что требует внимания." },
+        { "key": "decisions", "heading": "ОБСУЖДЁННЫЕ ВОПРОСЫ И РЕШЕНИЯ", "kind": "decisions", "guidance": "Формат: Вопрос → Решение → Ответственный. Если решение принято на встрече — зафиксируй кто сказал." },
+        { "key": "client_requests", "heading": "ТРЕБУЕТСЯ ОТ КЛИЕНТА", "kind": "client_requests", "guidance": "Короткий и конкретный список решений или материалов." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн]" },
+        { "key": "next_meeting", "heading": "СЛЕДУЮЩАЯ ВСТРЕЧА", "kind": "next_meeting", "guidance": "Дата, повестка." }
+      ],
+      "rules": [
+        "Числа план/факт указывай всегда — это защита агентства.",
+        "Раздел «Требуется от клиента» держи коротким и конкретным.",
+        "Если решение принято на встрече — зафиксируй, кто его озвучил.",
+        "Без воды — только факты и действия."
+      ],
+      "tips": [
+        "Статус должен уходить клиенту в течение 24 часов после встречи",
+        "Раздел «требуется от клиента» — держи его коротким и конкретным",
+        "Если решение принято на встрече — зафикси кто сказал и когда",
+        "Числа план/факт всегда указывай — это защита агентства"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "client_debrief",
+      "group": "client",
+      "category": "management",
+      "sheet": "🔵 Клиент-Дебрифинг",
+      "title": "Дебрифинг / Post-mortem с клиентом",
+      "subtitle": "Итоги завершённой кампании",
+      "goal": "Встреча после завершения кампании · цель — итоги, выводы, следующий шаг",
+      "reportTitle": "Контакт-репорт: Дебрифинг / Post-mortem с клиентом",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 48,
+      "sendTo": "Клиент + команда + директор",
+      "tone": "профессиональный, позитивный",
+      "specificFields": [
+        { "key": "campaign", "label": "Название завершённой кампании", "type": "text", "askBeforeRecording": true },
+        { "key": "period", "label": "Период кампании", "type": "text", "askBeforeRecording": true },
+        { "key": "budget_actual", "label": "Общий бюджет (факт)", "type": "text" },
+        { "key": "kpi", "label": "KPI план vs факт (основные)", "type": "text" },
+        { "key": "client_feedback", "label": "Оценка клиента", "hint": "что понравилось / не понравилось", "type": "text" },
+        { "key": "our_assessment", "label": "Наша оценка кампании", "type": "text" },
+        { "key": "next_budget", "label": "Следующий бюджет / период (если обсуждали)", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ", "kind": "text", "guidance": "2–3 предложения — итог кампании и встречи." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "results", "heading": "РЕЗУЛЬТАТЫ КАМПАНИИ", "kind": "text", "guidance": "KPI план vs факт таблицей (markdown) · Ключевые инсайты · Что сработало / не сработало." },
+        { "key": "client_feedback", "heading": "ОБРАТНАЯ СВЯЗЬ КЛИЕНТА", "kind": "text", "guidance": "Положительное (цитаты с похвалой — для кейса) · Критика / замечания (дословно) · Пожелания на будущее." },
+        { "key": "our_assessment", "heading": "НАША ОЦЕНКА", "kind": "text", "internalOnly": true, "guidance": "Внутренний блок — не для клиента: что сделали хорошо, что улучшить в следующий раз." },
+        { "key": "continuation", "heading": "ВОЗМОЖНОСТИ ДЛЯ ПРОДОЛЖЕНИЯ", "kind": "text", "guidance": "Следующий бюджет, новые задачи, договорённости о продолжении." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн]" }
+      ],
+      "rules": [
+        "Цитаты клиента с похвалой сохраняй дословно — для кейса и портфолио.",
+        "Критику клиента фиксируй дословно — это приоритет для улучшений.",
+        "Внутренний блок оценки — только для команды."
+      ],
+      "tips": [
+        "Дебрифинг — лучший момент для обсуждения следующего бюджета",
+        "Внутренний блок оценки — только для команды, не отправлять клиенту",
+        "Цитаты клиента с похвалой — сохрани для кейса и портфолио",
+        "Критику клиента фиксируй дословно — это приоритет для улучшений"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "internal_status",
+      "group": "internal",
+      "category": "operations",
+      "sheet": "🔴 Внутр-Статус",
+      "title": "Внутренний статус проекта",
+      "subtitle": "Синхронизация команды",
+      "goal": "Встреча команды без клиента · цель — синхронизация, распределение задач, снятие блокеров",
+      "reportTitle": "Протокол: Внутренний статус проекта",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "Только команда",
+      "tone": "внутренний, конкретный, без лишних слов",
+      "specificFields": [
+        { "key": "campaign", "label": "Название проекта / кампании", "type": "text", "askBeforeRecording": true },
+        { "key": "stage", "label": "Этап", "hint": "подготовка / запуск / оптимизация / завершение", "type": "text", "askBeforeRecording": true },
+        { "key": "team", "label": "Команда на проекте", "type": "text" },
+        { "key": "status_by_track", "label": "Текущий статус по каждому направлению", "type": "text" },
+        { "key": "blockers", "label": "Блокеры и проблемы", "type": "text" },
+        { "key": "decide_now", "label": "Что нужно решить прямо сейчас", "type": "text" },
+        { "key": "risks", "label": "Риски", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ", "kind": "text", "guidance": "1–2 предложения — общий статус проекта." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "status_by_track", "heading": "СТАТУС ПО НАПРАВЛЕНИЯМ", "kind": "text", "guidance": "Список: [Направление]: [статус] со светофором ✅ норма / ⚠️ риск / ❌ проблема." },
+        { "key": "blockers", "heading": "БЛОКЕРЫ И РИСКИ", "kind": "text", "guidance": "Отдельным списком: [Описание блокера] → [Кто решает] → [Дедлайн]. Не прячь блокеры внутри текста." },
+        { "key": "decisions", "heading": "РЕШЕНИЯ, ПРИНЯТЫЕ НА ВСТРЕЧЕ", "kind": "decisions", "guidance": "" },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн] — каждая задача должна иметь имя и дату." },
+        { "key": "next_meeting", "heading": "СЛЕДУЮЩАЯ СИНХРОНИЗАЦИЯ", "kind": "next_meeting", "guidance": "Дата, формат." }
+      ],
+      "rules": [
+        "Внутренний статус — для команды: пиши прямо и конкретно.",
+        "Блокеры выноси в отдельный блок.",
+        "Статус по направлениям — со светофором ✅ / ⚠️ / ❌.",
+        "Каждая задача в Action plan должна иметь имя и дату — иначе не выполнится."
+      ],
+      "tips": [
+        "Внутренний статус — для команды, можно быть прямым и конкретным",
+        "Блокеры — выноси в отдельный блок, не прячь внутри текста",
+        "Action plan: каждая задача должна иметь имя и дату — иначе не выполнится",
+        "Статус по направлениям — используй светофор: ✅ норма / ⚠️ риск / ❌ проблема"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "internal_brief",
+      "group": "internal",
+      "category": "production",
+      "sheet": "🔴 Внутр-Брифинг",
+      "title": "Внутренний брифинг команды",
+      "subtitle": "Постановка задачи внутри команды",
+      "goal": "Постановка задачи внутри команды · цель — все понимают задачу, сроки и ожидания",
+      "reportTitle": "Протокол: Внутренний брифинг команды",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "Только команда",
+      "tone": "чёткий, без лишних слов",
+      "specificFields": [
+        { "key": "campaign", "label": "Проект / кампания", "type": "text", "askBeforeRecording": true },
+        { "key": "task_owner", "label": "Кто ставит задачу", "hint": "аккаунт / директор", "type": "text", "askBeforeRecording": true },
+        { "key": "task_team", "label": "Кому ставится задача", "hint": "медиа / креатив / диджитал", "type": "text" },
+        { "key": "task", "label": "Суть задачи", "type": "text" },
+        { "key": "client_brief_received", "label": "Клиентский бриф получен?", "hint": "да / нет / частично", "type": "text" },
+        { "key": "internal_deadline", "label": "Дедлайн на внутренний результат", "type": "text" },
+        { "key": "client_deadline", "label": "Дедлайн на презентацию клиенту", "type": "text" },
+        { "key": "deliverable", "label": "Формат результата", "hint": "КП / медиаплан / презентация", "type": "text" },
+        { "key": "questions", "label": "Вопросы, которые нужно прояснить до старта", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "СУТЬ ЗАДАЧИ", "kind": "text", "guidance": "2–3 предложения." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "Кто ставит задачу и кому." },
+        { "key": "assignment", "heading": "ЗАДАНИЕ", "kind": "text", "guidance": "Подпункты: Что делаем · Для кого (клиент / проект) · Формат результата · Дедлайн внутренний · Дедлайн клиентский. Обязательно ДВА дедлайна." },
+        { "key": "inputs", "heading": "ВВОДНЫЕ ДАННЫЕ", "kind": "text", "guidance": "Что есть (бриф, материалы, данные) / чего не хватает." },
+        { "key": "open_questions", "heading": "ОТКРЫТЫЕ ВОПРОСЫ", "kind": "open_questions", "guidance": "Что нужно уточнить до старта работы — критичный блок." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн]" }
+      ],
+      "rules": [
+        "Всегда фиксируй ДВА дедлайна: внутренний и клиентский. Если один не назван — «не озвучен, уточнить».",
+        "Формат результата уточняй явно, чтобы не переделывать.",
+        "Открытые вопросы — критичный блок: без ответов нельзя начинать."
+      ],
+      "tips": [
+        "Всегда фиксируй ДВА дедлайна: внутренний и клиентский",
+        "Блок «открытые вопросы» — критичен, без ответов нельзя начинать",
+        "Формат результата — уточни заранее, чтобы не переделывать"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "internal_management",
+      "group": "internal",
+      "category": "management",
+      "sheet": "🔴 Внутр-Совещание",
+      "title": "Совещание руководства",
+      "subtitle": "Стратегическая сессия директоров",
+      "goal": "Встреча директоров и руководителей · цель — решения, стратегия, приоритеты",
+      "reportTitle": "Протокол: Совещание руководства",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": true,
+      "slaHours": 24,
+      "sendTo": "Только директора",
+      "tone": "формальный, точный",
+      "specificFields": [
+        { "key": "agenda", "label": "Повестка (темы для обсуждения)", "type": "text", "askBeforeRecording": true },
+        { "key": "initiator", "label": "Инициатор встречи", "type": "text" },
+        { "key": "confidentiality_level", "label": "Уровень конфиденциальности", "hint": "стандартный / только для директоров", "type": "text" },
+        { "key": "key_decisions", "label": "Ключевые решения, которые нужно принять", "type": "text" },
+        { "key": "materials", "label": "Вводные данные / материалы, которые обсуждались", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ", "kind": "text", "guidance": "2–3 предложения — главные итоги." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "topics", "heading": "ОБСУЖДЁННЫЕ ТЕМЫ", "kind": "text", "guidance": "По пунктам повестки: [Тема] → [Обсуждение] → [Решение]." },
+        { "key": "decisions", "heading": "ПРИНЯТЫЕ РЕШЕНИЯ", "kind": "decisions", "guidance": "Выделено отдельно — это главное: [Решение] | [Ответственный] | [Срок исполнения]." },
+        { "key": "deferred", "heading": "ОТЛОЖЕННЫЕ ВОПРОСЫ", "kind": "text", "guidance": "Что не решили и почему (причина откладывания обязательна)." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн]" },
+        { "key": "next_meeting", "heading": "СЛЕДУЮЩЕЕ СОВЕЩАНИЕ", "kind": "next_meeting", "guidance": "" }
+      ],
+      "rules": [
+        "Решения — самый важный блок: формулируй максимально чётко, с ответственным и сроком.",
+        "Для отложенных вопросов фиксируй причину откладывания.",
+        "Тон формальный и точный."
+      ],
+      "tips": [
+        "Решения — самый важный блок, выдели их максимально чётко",
+        "Отложенные вопросы — фиксируй причину откладывания",
+        "Рассылай только тем кто был на встрече или кого касаются решений",
+        "Конфиденциальные решения — отдельный файл с ограниченным доступом"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "hr_meeting",
+      "group": "internal",
+      "category": "hr",
+      "sheet": "🟢 HR-встреча",
+      "title": "HR-встреча",
+      "subtitle": "1:1 / Ревью / Онбординг / Выходное интервью",
+      "goal": "Встреча с сотрудником · цель — развитие, обратная связь, адаптация",
+      "reportTitle": "Протокол: HR-встреча",
+      "emojiOverride": "🟢",
+      "confidentiality": "restricted",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "HR + непосредственный руководитель",
+      "tone": "уважительный, поддерживающий, конфиденциальный",
+      "specificFields": [
+        { "key": "meeting_kind", "label": "Тип встречи", "hint": "1:1 / Ревью / Онбординг / Выходное интервью", "type": "text", "askBeforeRecording": true },
+        { "key": "employee", "label": "Сотрудник", "hint": "имя, роль, агентство", "type": "text", "askBeforeRecording": true },
+        { "key": "manager", "label": "Руководитель / HR", "type": "text" },
+        { "key": "review_period", "label": "Период ревью (если применимо)", "type": "text" },
+        { "key": "confidentiality_scope", "label": "Конфиденциальность", "hint": "только HR / только руководитель", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "kind_and_goal", "heading": "ТИП И ЦЕЛЬ ВСТРЕЧИ", "kind": "text", "guidance": "" },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "topics", "heading": "ОБСУЖДЁННЫЕ ТЕМЫ", "kind": "text", "guidance": "Подпункты: Текущее состояние / самочувствие сотрудника · Достижения за период · Сложности и запросы на поддержку · Развитие и карьерные цели." },
+        { "key": "feedback", "heading": "ОБРАТНАЯ СВЯЗЬ", "kind": "text", "guidance": "От руководителя сотруднику. Нейтрально, уважительно." },
+        { "key": "agreements", "heading": "ДОГОВОРЁННОСТИ", "kind": "decisions", "guidance": "[Тема] | [Договорённость] | [Срок]. Фиксируй договорённости, а не оценки." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн]" },
+        { "key": "next_meeting", "heading": "СЛЕДУЮЩАЯ ВСТРЕЧА", "kind": "next_meeting", "guidance": "" }
+      ],
+      "rules": [
+        "Документ конфиденциальный. Используй нейтральный, уважительный тон.",
+        "Фиксируй договорённости, а не оценки личности — это защита обеих сторон.",
+        "Не делай выводов о сотруднике, которых не было в разговоре."
+      ],
+      "tips": [
+        "HR-репорты строго конфиденциальны — доступ только у HR и непосредственного руководителя",
+        "1:1 — регулярный формат, не пропускай даже если всё хорошо",
+        "Фиксируй договорённости, а не оценки — это защита обеих сторон",
+        "Выходное интервью — самая ценная обратная связь для холдинга"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "vendor_status",
+      "group": "vendor",
+      "category": "operations",
+      "sheet": "🟡 Вендор-Статус",
+      "title": "Статус с вендором",
+      "subtitle": "Медиаселлер / продакшн / подрядчик",
+      "goal": "Встреча с медиаплощадкой, продакшн-студией или другим подрядчиком · рабочая встреча, статус",
+      "reportTitle": "Контакт-репорт: Статус с вендором / медиаселлером / подрядчиком",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "Команда + вендор",
+      "tone": "деловой",
+      "specificFields": [
+        { "key": "vendor_company", "label": "Компания вендора и тип", "hint": "медиаселлер / продакшн / IT / другое", "type": "text", "askBeforeRecording": true },
+        { "key": "vendor_contact", "label": "Имя и должность контакта", "type": "text", "askBeforeRecording": true },
+        { "key": "campaign", "label": "Проект / кампания, к которой относится встреча", "type": "text", "askBeforeRecording": true },
+        { "key": "topics", "label": "Что обсуждали", "hint": "условия / технические детали / оптимизация", "type": "text" },
+        { "key": "commercial_terms", "label": "Коммерческие условия (если обсуждались)", "type": "text" },
+        { "key": "from_vendor", "label": "Что нужно от вендора к следующей встрече", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ", "kind": "text", "guidance": "2–3 предложения." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "vendor", "heading": "ВЕНДОР", "kind": "text", "guidance": "Компания, тип услуг, текущий статус сотрудничества." },
+        { "key": "topics", "heading": "ОБСУЖДЁННЫЕ ТЕМЫ", "kind": "text", "guidance": "[Тема] → [Итог / решение]." },
+        { "key": "commercial_terms", "heading": "КОММЕРЧЕСКИЕ УСЛОВИЯ", "kind": "text", "guidance": "Если обсуждались — бюджет, скидки, сроки. Фиксируй письменно даже устные договорённости." },
+        { "key": "agreements", "heading": "ДОГОВОРЁННОСТИ", "kind": "text", "guidance": "Два списка: [Вендор делает] | [Дедлайн] и [Мы делаем] | [Дедлайн]. Обещания вендора — с именем и датой." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн]" },
+        { "key": "next_step", "heading": "СЛЕДУЮЩИЙ ШАГ", "kind": "next_meeting", "guidance": "" }
+      ],
+      "rules": [
+        "Коммерческие условия выделяй отдельно и фиксируй письменно, даже устные договорённости.",
+        "Если вендор что-то пообещал — зафиксируй с именем и датой."
+      ],
+      "tips": [
+        "Коммерческие условия — всегда фиксируй письменно, даже устные договорённости",
+        "Если вендор что-то обещал — зафикси с именем и датой",
+        "Репорт по вендорам — основа для сравнения предложений при выборе"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "vendor_negotiation",
+      "group": "vendor",
+      "category": "management",
+      "sheet": "🟡 Вендор-Переговоры",
+      "title": "Переговоры с вендором",
+      "subtitle": "Условия, контракт, SLA",
+      "goal": "Переговоры по условиям сотрудничества · коммерческие условия, контракты, SLA",
+      "reportTitle": "Протокол: Переговоры с вендором / партнёром",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": true,
+      "slaHours": 24,
+      "sendTo": "Директор + байер",
+      "tone": "точный, юридически аккуратный",
+      "specificFields": [
+        { "key": "vendor_company", "label": "Компания вендора", "type": "text", "askBeforeRecording": true },
+        { "key": "subject", "label": "Предмет переговоров", "hint": "цена / условия / контракт / скидка", "type": "text", "askBeforeRecording": true },
+        { "key": "our_position", "label": "Наша стартовая позиция", "type": "text" },
+        { "key": "vendor_position", "label": "Позиция вендора", "type": "text" },
+        { "key": "outcome", "label": "Итог переговоров", "hint": "договорились / продолжаем / разошлись", "type": "text" },
+        { "key": "agreed_terms", "label": "Согласованные условия", "type": "text" },
+        { "key": "open_terms", "label": "Что остаётся несогласованным", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ ПЕРЕГОВОРОВ", "kind": "text", "guidance": "Итог одной строкой: договорились / продолжаем / разошлись — и главное условие." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "subject", "heading": "ПРЕДМЕТ ПЕРЕГОВОРОВ", "kind": "text", "guidance": "" },
+        { "key": "positions", "heading": "ПОЗИЦИИ СТОРОН", "kind": "text", "guidance": "Наша позиция: [...] · Позиция вендора: [...]" },
+        { "key": "outcome", "heading": "ИТОГ", "kind": "text", "guidance": "Согласовано: [конкретные условия] · Не согласовано: [что осталось открытым] · Уступки с нашей стороны · Уступки вендора." },
+        { "key": "next_steps", "heading": "СЛЕДУЮЩИЕ ШАГИ", "kind": "action_plan", "guidance": "[Кто] | [Что] | [Когда]" },
+        { "key": "assessment", "heading": "ОЦЕНКА", "kind": "text", "internalOnly": true, "guidance": "Внутренний блок — только для руководства: насколько условия выгодны для нас." }
+      ],
+      "rules": [
+        "Протокол переговоров — основа для договора: формулируй точно, с цифрами и условиями.",
+        "Уступки обеих сторон фиксируй всегда — это важно для следующих переговоров.",
+        "Внутренняя оценка — только для руководства, вендору не показывать."
+      ],
+      "tips": [
+        "Протокол переговоров — основа для договора. Пиши точно",
+        "Уступки всегда фиксируй — это важно для следующих переговоров",
+        "Внутренняя оценка — только для руководства, не показывать вендору"
+      ],
+      "isDraft": false
+    },
+    {
+      "code": "internal_sales",
+      "group": "internal",
+      "category": "sales",
+      "sheet": null,
+      "title": "Стратегическая сессия / roadmap",
+      "subtitle": "Продажи и новый бизнес",
+      "goal": "Внутренняя сессия по продажам и новому бизнесу · цель — приоритеты, пайплайн, инициативы, ответственные",
+      "reportTitle": "Протокол: Стратегическая сессия по продажам / roadmap",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": true,
+      "slaHours": 24,
+      "sendTo": "Участники сессии + New Business директор",
+      "tone": "деловой, конкретный",
+      "specificFields": [
+        { "key": "period", "label": "Период планирования", "hint": "квартал / полугодие / год", "type": "text", "askBeforeRecording": true },
+        { "key": "focus", "label": "Направления / клиенты в фокусе", "type": "text", "askBeforeRecording": true },
+        { "key": "targets", "label": "Цели по выручке / лидам / тендерам", "type": "text" },
+        { "key": "initiatives", "label": "Ключевые инициативы", "type": "text" },
+        { "key": "materials", "label": "Материалы, которые обсуждались", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "РЕЗЮМЕ", "kind": "text", "guidance": "2–3 предложения — главные итоги сессии." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "goals", "heading": "ЦЕЛИ И ПРИОРИТЕТЫ", "kind": "text", "guidance": "По направлениям / клиентам: цель, метрика, срок." },
+        { "key": "pipeline", "heading": "ПАЙПЛАЙН И ВОЗМОЖНОСТИ", "kind": "text", "guidance": "Лиды, тендеры, продления: [Клиент / возможность] → [Статус] → [Следующий шаг] → [Ответственный]." },
+        { "key": "initiatives", "heading": "ИНИЦИАТИВЫ И ГИПОТЕЗЫ", "kind": "text", "guidance": "Что пробуем, зачем, как измерим." },
+        { "key": "risks", "heading": "РИСКИ И ОГРАНИЧЕНИЯ", "kind": "text", "guidance": "Ресурсы, конкуренты, рынок." },
+        { "key": "decisions", "heading": "ПРИНЯТЫЕ РЕШЕНИЯ", "kind": "decisions", "guidance": "[Решение] | [Ответственный] | [Срок]" },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн]" },
+        { "key": "next_meeting", "heading": "СЛЕДУЮЩАЯ СЕССИЯ", "kind": "next_meeting", "guidance": "" }
+      ],
+      "rules": [
+        "Каждая возможность в пайплайне — со статусом, следующим шагом и ответственным.",
+        "Решения и инициативы — с измеримой целью и сроком."
+      ],
+      "tips": [
+        "Черновик шаблона: в роутере ADV нет отдельного листа — структура написана по аналогии, требует валидации",
+        "Пайплайн фиксируй по каждому клиенту: статус, следующий шаг, ответственный",
+        "Инициативы без метрики и срока — не инициативы"
+      ],
+      "isDraft": true
+    },
+    {
+      "code": "vendor_brief",
+      "group": "vendor",
+      "category": "production",
+      "sheet": null,
+      "title": "Брифинг вендора",
+      "subtitle": "Постановка задачи подрядчику",
+      "goal": "Мы ставим задачу вендору / подрядчику · цель — вендор понимает задачу, сроки, бюджет и требования",
+      "reportTitle": "Контакт-репорт: Брифинг вендора / подрядчика",
+      "confidentiality": "standard",
+      "allowConfidentialityChoice": false,
+      "slaHours": 24,
+      "sendTo": "Команда + вендор",
+      "tone": "чёткий, деловой",
+      "specificFields": [
+        { "key": "vendor_company", "label": "Компания вендора и тип", "hint": "медиаселлер / продакшн / IT / другое", "type": "text", "askBeforeRecording": true },
+        { "key": "campaign", "label": "Проект / кампания / клиент", "type": "text", "askBeforeRecording": true },
+        { "key": "task", "label": "Суть задачи вендору", "type": "text" },
+        { "key": "deliverable", "label": "Формат результата и объём", "type": "text" },
+        { "key": "timing", "label": "Сроки и этапы", "type": "text" },
+        { "key": "budget", "label": "Бюджет / коммерческие условия", "type": "text" },
+        { "key": "requirements", "label": "Требования и ограничения", "hint": "бренд, tone of voice, юридические, технические", "type": "text" }
+      ],
+      "reportSections": [
+        { "key": "summary", "heading": "СУТЬ ЗАДАЧИ", "kind": "text", "guidance": "2–3 предложения." },
+        { "key": "participants", "heading": "УЧАСТНИКИ", "kind": "participants", "guidance": "" },
+        { "key": "vendor", "heading": "ВЕНДОР", "kind": "text", "guidance": "Компания, тип услуг, контактное лицо." },
+        { "key": "assignment", "heading": "ЗАДАНИЕ ВЕНДОРУ", "kind": "text", "guidance": "Что делаем · Для какого клиента / проекта · Формат результата · Объём." },
+        { "key": "timing", "heading": "СРОКИ И ЭТАПЫ", "kind": "text", "guidance": "Промежуточные и финальный дедлайны." },
+        { "key": "commercial_terms", "heading": "БЮДЖЕТ И КОММЕРЧЕСКИЕ УСЛОВИЯ", "kind": "text", "guidance": "Если обсуждались. Фиксируй письменно даже устные договорённости." },
+        { "key": "requirements", "heading": "ТРЕБОВАНИЯ И ОГРАНИЧЕНИЯ", "kind": "text", "guidance": "Бренд, tone of voice, юридические, технические." },
+        { "key": "open_questions", "heading": "ОТКРЫТЫЕ ВОПРОСЫ", "kind": "open_questions", "guidance": "Что вендор должен уточнить / что мы должны прислать." },
+        { "key": "action_plan", "heading": "ACTION PLAN", "kind": "action_plan", "guidance": "[Имя] | [Задача] | [Дедлайн] — с обеих сторон." },
+        { "key": "next_step", "heading": "СЛЕДУЮЩИЙ ШАГ", "kind": "next_meeting", "guidance": "" }
+      ],
+      "rules": [
+        "Обязательно зафиксируй формат результата, сроки и бюджет; отсутствующее — «не озвучено, уточнить».",
+        "Обещания и обязательства вендора — с именем и датой."
+      ],
+      "tips": [
+        "Черновик шаблона: в роутере ADV нет отдельного листа — структура написана по аналогии, требует валидации",
+        "Формат результата, сроки и бюджет — три вещи, без которых бриф не бриф",
+        "Всё, что вендор пообещал — с именем и датой"
+      ],
+      "isDraft": true
+    }
+  ]
+}
