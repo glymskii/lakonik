@@ -2,6 +2,12 @@
 
 Документ для агента-разработчика. Решения ниже согласованы с владельцем продукта 21.09.2026 и не обсуждаются заново; открытые вопросы вынесены в раздел 16. Контекст текущей системы — `README.md` (структура, пайплайн, релиз, деплой) и `docs/PLAN.md` (исходный план). Всё, что здесь не описано, работает как сейчас.
 
+## Статус выполнения
+
+- **Фаза 0 — сделано 22.09.2026**: переименование (репозиторий `glymskii/lakonik`, проект/схема `Lakonik`, пакеты `@lakonik/*`, имя в ASC, нейтральные тексты и промпт); домены `lakonik.app` (Vercel, проект `lakonik-site`: лендинг, privacy, terms, support, `/join/<token>`, AASA) и `api.lakonik.app` (Railway, `BASE_URL` обновлён, iOS Release ходит на него); Resend-домен `lakonik.app` заведён (id `abc85215-…`, ждёт верификации DNS — после неё `EMAIL_FROM=Lakonik <noreply@lakonik.app>` на Railway); String Catalog (`apps/ios/scripts/sync-strings.sh`); Sentry (api/worker/iOS) и Amplitude (события с сервера) — код есть, ключи не заданы; экспорт: таблицы DOCX и символы PDF починены.
+- **Ждёт владельца**: DSN Sentry и ключ Amplitude → переменные Railway `SENTRY_DSN`, `AMPLITUDE_API_KEY` и build setting `SENTRY_DSN` в `project.yml`; OAuth client Google (iOS) + проект Google Cloud для Meet API и заявка на верификацию; приложение Zoom Marketplace; переадресация `support@lakonik.app`; Paid Apps Agreement и Small Business Program.
+- **Дальше**: фаза 1 (организации) по разделу 14.
+
 ## 0. Как работать с этим документом
 
 - Репозиторий — монорепо `apps/server` (Node 22, Hono + zod-openapi, Drizzle, pg-boss, Better Auth 1.7) и `apps/ios` (SwiftUI, iOS 17+, xcodegen). Прод — Railway (api, worker, Postgres, bucket), сборки — TestFlight через ASC API key (см. README «Релиз в TestFlight»).
