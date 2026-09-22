@@ -4,6 +4,7 @@
  *   tsx scripts/asc.ts group [название]       — создать внутреннюю группу (доступ ко всем сборкам), вывести её id
  *   tsx scripts/asc.ts testers                — список бета-тестеров
  *   tsx scripts/asc.ts add <groupId> <email>  — добавить тестера в группу (внешние группы)
+ *   tsx scripts/asc.ts invite <email…>        — отправить (повторно) приглашение TestFlight тестеру со статусом NOT_INVITED
  *   tsx scripts/asc.ts crashes [n]            — крэш-фидбек из TestFlight: список и текст n последних крэш-логов (по умолчанию 1)
  *   tsx scripts/asc.ts bundle-ids             — App ID команды с включёнными capabilities
  *   tsx scripts/asc.ts app-groups <bundleId…> — зарегистрировать App ID (если нет) и включить capability App Groups
@@ -54,6 +55,15 @@ if (cmd === "builds") {
       data: { type: "betaGroups", attributes: { name, isInternalGroup: true, hasAccessToAllBuilds: true }, relationships: { app: { data: { type: "apps", id: APP_ID } } } },
     });
     console.log(`создана группа ${r.data.id} (${r.data.attributes.name}, internal, доступ ко всем сборкам)`);
+  }
+} else if (cmd === "invite") {
+  // Тестер числится в группе, но статус NOT_INVITED и «No Builds Available» — письмо-приглашение не ушло; отправляем явно
+  for (const email of args) {
+    const r = await api("GET", `/betaTesters?filter[apps]=${APP_ID}&filter[email]=${encodeURIComponent(email)}&fields[betaTesters]=email,state`);
+    const t = r.data[0];
+    if (!t) { console.log(`${email}: не найден среди тестеров приложения`); continue; }
+    await api("POST", "/betaTesterInvitations", { data: { type: "betaTesterInvitations", relationships: { betaTester: { data: { type: "betaTesters", id: t.id } }, app: { data: { type: "apps", id: APP_ID } } } } });
+    console.log(`${email}: приглашение отправлено (было ${t.attributes.state})`);
   }
 } else if (cmd === "testers") {
   const r = await api("GET", `/betaTesters?filter[apps]=${APP_ID}&limit=50&fields[betaTesters]=email,firstName,lastName,inviteType,state`);
