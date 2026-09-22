@@ -1,7 +1,7 @@
 /**
  * Проверка только LLM-шага: берёт тестовый транскрипт (FakeStt) и прогоняет реальное саммари Claude
  * по указанному шаблону. Печатает JSON-структуру, markdown, токены и стоимость.
- *   pnpm --filter @adv/server exec tsx --env-file=.env scripts/e2e-summarize.ts [код шаблона] [effort]
+ *   pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/e2e-summarize.ts [код шаблона] [effort]
  */
 import { and, eq } from "drizzle-orm";
 import { closeDb, db } from "../src/db/client.js";

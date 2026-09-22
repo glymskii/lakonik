@@ -60,7 +60,7 @@ export async function renderPdf(t: Template, r: ReportRow, meta: RenderMeta): Pr
   }
 
   doc.moveDown(1.2);
-  doc.font("R").fontSize(8.5).fillColor("#777").text("Сформировано ADV Meetings автоматически по аудиозаписи. Проверьте факты и action items перед отправкой.");
+  doc.font("R").fontSize(8.5).fillColor("#777").text("Сформировано Lakonik автоматически по аудиозаписи. Проверьте факты и action items перед отправкой.");
   doc.end();
   return done;
 }

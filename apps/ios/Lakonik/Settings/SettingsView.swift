@@ -74,7 +74,7 @@ struct SettingsView: View {
                 #endif
                 Section("О приложении") {
                     LabeledContent("Версия", value: (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "")
-                    Text("ADV Meetings — запись встреч, расшифровка и контакт-репорты по стандарту холдинга ADV Kazakhstan.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Lakonik — запись встреч, расшифровка, отчёт и задачи.").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Настройки")

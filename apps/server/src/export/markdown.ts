@@ -125,6 +125,6 @@ export function renderMarkdown(t: Template, r: ReportRow, meta: RenderMeta): str
     lines.push("");
   }
   lines.push("---");
-  lines.push(`_Сформировано ADV Meetings автоматически по аудиозаписи. Проверьте факты и action items перед отправкой._`);
+  lines.push(`_Сформировано Lakonik автоматически по аудиозаписи. Проверьте факты и action items перед отправкой._`);
   return lines.join("\n");
 }

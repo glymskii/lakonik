@@ -113,14 +113,14 @@ export async function renderDocx(t: Template, r: ReportRow, meta: RenderMeta): P
   }
   children.push(
     new Paragraph({
-      children: [new TextRun({ text: "Сформировано ADV Meetings автоматически по аудиозаписи. Проверьте факты и action items перед отправкой.", italics: true, color: "7A7A7A", size: 18, font: FONT })],
+      children: [new TextRun({ text: "Сформировано Lakonik автоматически по аудиозаписи. Проверьте факты и action items перед отправкой.", italics: true, color: "7A7A7A", size: 18, font: FONT })],
       spacing: { before: 360 },
       alignment: AlignmentType.LEFT,
     }),
   );
 
   const doc = new Document({
-    creator: "ADV Meetings",
+    creator: "Lakonik",
     title: r.title,
     styles: { default: { document: { run: { font: FONT, size: 22 } } } },
     sections: [{ properties: {}, children }],

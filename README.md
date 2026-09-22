@@ -1,6 +1,6 @@
-# ADV Meetings
+# Lakonik
 
-iOS-приложение для холдинга ADV Kazakhstan: запись встречи на телефон → транскрибация с разделением спикеров (ElevenLabs Scribe v2) → контакт-репорт по шаблону типа встречи (Claude) → задачи, экспорт, шаринг. Аналог Plaud AI Note, заточенный под регламент контакт-репортов ADV.
+iOS-приложение: запись встречи на телефон → транскрибация с разделением спикеров (ElevenLabs Scribe v2) → протокол/контакт-репорт по шаблону типа встречи (Claude) → задачи, экспорт, шаринг. Выросло из внутреннего приложения ADV Kazakhstan («ADV Meetings»); план превращения в публичный продукт — `docs/lakonik-1.0.md`.
 
 Аудио живёт на сервере только на время обработки и удаляется сразу после расшифровки. Хранятся транскрипт, отчёт и задачи.
 
@@ -58,7 +58,7 @@ iPhone ──segments (presigned PUT)──▶ Railway Bucket (временно�
 pnpm install
 docker compose -f infra/docker-compose.yml up -d        # Postgres :5439, MinIO :9000/:9001
 cp apps/server/.env.example apps/server/.env             # заполнить ключи (или FAKE_PROVIDERS=true)
-pnpm --filter @adv/server dev:bucket                     # bucket audio-temp в MinIO
+pnpm --filter @lakonik/server dev:bucket                     # bucket audio-temp в MinIO
 pnpm db:migrate && pnpm db:seed                          # схема + 12 шаблонов + 8 агентств
 pnpm dev                                                 # API на :3000
 pnpm worker                                              # воркер пайплайна
@@ -69,26 +69,26 @@ pnpm worker                                              # воркер пайп
 Демо-данные для показа и скриншотов (вымышленные агентство, клиент и сотрудники; бриф с эталонным транскриптом на 4 спикера, отчётом и задачами; вход под `asel.nurlanova@orbita.kz` по коду из лога API):
 
 ```bash
-pnpm --filter @adv/server exec tsx --env-file=.env scripts/seed-showcase.ts
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/seed-showcase.ts
 ```
 
 Сквозной прогон на реальном аудио без телефона:
 
 ```bash
-pnpm --filter @adv/server e2e:pipeline -- путь/к/записи.m4a client_brief auto 4
+pnpm --filter @lakonik/server e2e:pipeline -- путь/к/записи.m4a client_brief auto 4
 ```
 
 Проверка только LLM-шага на тестовом транскрипте:
 
 ```bash
-pnpm --filter @adv/server exec tsx --env-file=.env scripts/e2e-summarize.ts client_brief high
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/e2e-summarize.ts client_brief high
 ```
 
 ## iOS-приложение
 
 ```bash
-cd apps/ios && xcodegen generate      # ADVMeetings.xcodeproj не хранится в git
-open ADVMeetings.xcodeproj
+cd apps/ios && xcodegen generate      # Lakonik.xcodeproj не хранится в git
+open Lakonik.xcodeproj
 ```
 
 Debug-сборка ходит на `http://localhost:3000` (симулятор видит localhost Mac), Release — на Railway (`API_BASE_URL` в `project.yml`). URL можно переопределить в Настройках приложения. Bundle ID `kz.adv.meetings`, iOS 17+. Запись в симуляторе требует доступа Simulator к микрофону macOS; фоновая запись при блокировке, звонки, push и Live Activity проверяются на реальном устройстве.
@@ -96,7 +96,7 @@ Debug-сборка ходит на `http://localhost:3000` (симулятор �
 Сборка на устройство без входа в Xcode-аккаунт (подписание через App Store Connect API key):
 
 ```bash
-xcodebuild -project ADVMeetings.xcodeproj -scheme ADVMeetings -configuration Debug \
+xcodebuild -project Lakonik.xcodeproj -scheme Lakonik -configuration Debug \
   -destination "platform=iOS,id=<UDID>" -allowProvisioningUpdates \
   -authenticationKeyPath <AuthKey.p8> -authenticationKeyID <KEY_ID> -authenticationKeyIssuerID <ISSUER_ID> \
   API_BASE_URL=https://<api-domain> build
@@ -104,21 +104,21 @@ xcodebuild -project ADVMeetings.xcodeproj -scheme ADVMeetings -configuration Deb
 
 ## Релиз в TestFlight
 
-Приложение в App Store Connect: **ADV Meetings** (ID 6812003830), внутренняя группа **ADV Internal** с доступом ко всем сборкам. Номер билда = число коммитов.
+Приложение в App Store Connect: **Lakonik** (ранее ADV Meetings, ID 6812003830, bundle `kz.adv.meetings` не меняется), внутренняя группа **ADV Internal** с доступом ко всем сборкам. Номер билда = число коммитов.
 
 ```bash
 cd apps/ios && xcodegen generate
 BUILD=$(git rev-list --count HEAD)
-xcodebuild -project ADVMeetings.xcodeproj -scheme ADVMeetings -configuration Release \
-  -destination "generic/platform=iOS" -archivePath /tmp/adv-archive/ADVMeetings.xcarchive \
+xcodebuild -project Lakonik.xcodeproj -scheme Lakonik -configuration Release \
+  -destination "generic/platform=iOS" -archivePath /tmp/adv-archive/Lakonik.xcarchive \
   -allowProvisioningUpdates -authenticationKeyPath <AuthKey.p8> -authenticationKeyID <KEY_ID> -authenticationKeyIssuerID <ISSUER_ID> \
   CURRENT_PROJECT_VERSION=$BUILD archive
-xcodebuild -exportArchive -archivePath /tmp/adv-archive/ADVMeetings.xcarchive -exportOptionsPlist ExportOptions.plist \
+xcodebuild -exportArchive -archivePath /tmp/adv-archive/Lakonik.xcarchive -exportOptionsPlist ExportOptions.plist \
   -exportPath /tmp/adv-export -allowProvisioningUpdates \
   -authenticationKeyPath <AuthKey.p8> -authenticationKeyID <KEY_ID> -authenticationKeyIssuerID <ISSUER_ID>
 ```
 
-`ExportOptions.plist` настроен на прямую загрузку в App Store Connect. Расширение трансляции (запись онлайн-встреч) использует App Group `group.kz.adv.meetings` (создана в Apple Developer 21.09.2026 и привязана к App ID `kz.adv.meetings` и `kz.adv.meetings.broadcast`; автоподпись через ключ API группы создавать не умеет, только использовать). В Info.plist расширения ключ `RPBroadcastProcessMode` должен стоять прямо под `NSExtension` — в `NSExtensionAttributes` (как в шаблоне Xcode) валидатор App Store Connect его не видит и отклоняет сборку. Статус обработки, группы и крэш-логи из TestFlight: `pnpm --filter @adv/server exec tsx scripts/asc.ts builds | group | testers | crashes`. Внутренних тестировщиков (участников команды) добавляют в группу в App Store Connect; если после добавления у тестера статус NOT_INVITED / «No Builds Available» — письмо-приглашение не ушло, отправить его: `asc.ts invite <email…>`. Внешних — по email через `asc.ts add`, первая внешняя сборка проходит Beta App Review.
+`ExportOptions.plist` настроен на прямую загрузку в App Store Connect. Расширение трансляции (запись онлайн-встреч) использует App Group `group.kz.adv.meetings` (создана в Apple Developer 21.09.2026 и привязана к App ID `kz.adv.meetings` и `kz.adv.meetings.broadcast`; автоподпись через ключ API группы создавать не умеет, только использовать). В Info.plist расширения ключ `RPBroadcastProcessMode` должен стоять прямо под `NSExtension` — в `NSExtensionAttributes` (как в шаблоне Xcode) валидатор App Store Connect его не видит и отклоняет сборку. Статус обработки, группы и крэш-логи из TestFlight: `pnpm --filter @lakonik/server exec tsx scripts/asc.ts builds | group | testers | crashes`. Внутренних тестировщиков (участников команды) добавляют в группу в App Store Connect; если после добавления у тестера статус NOT_INVITED / «No Builds Available» — письмо-приглашение не ушло, отправить его: `asc.ts invite <email…>`. Внешних — по email через `asc.ts add`, первая внешняя сборка проходит Beta App Review.
 
 ## Деплой (Railway)
 
@@ -132,7 +132,7 @@ railway up --service worker --detach -m "…"
 Переменные окружения — `apps/server/.env.example`. Ключи (`ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `RESEND_API_KEY`, APNs `.p8`) переносятся из локального `.env` в оба сервиса одной командой:
 
 ```bash
-pnpm --filter @adv/server env:railway
+pnpm --filter @lakonik/server env:railway
 ```
 
 Ключ ElevenLabs должен иметь разрешение Speech to Text. Ключ APNs — из Apple Developer → Keys с включённым APNs (Sandbox & Production); проверка: `scripts/apns-check.ts`.
@@ -148,8 +148,8 @@ pnpm --filter @adv/server env:railway
 ## Тесты
 
 ```bash
-pnpm --filter @adv/server test        # vitest: сегментация STT, рендер отчётов, промпт, сроки задач
-pnpm --filter @adv/server typecheck
+pnpm --filter @lakonik/server test        # vitest: сегментация STT, рендер отчётов, промпт, сроки задач
+pnpm --filter @lakonik/server typecheck
 ```
 
 ## Стоимость

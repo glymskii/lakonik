@@ -1,4 +1,4 @@
-import templatesJson from "@adv/shared/templates.json" with { type: "json" };
+import templatesJson from "@lakonik/shared/templates.json" with { type: "json" };
 import type { TemplateField, TemplateSection } from "../db/types.js";
 
 export interface CatalogGroup {

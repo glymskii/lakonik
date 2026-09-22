@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Настройки сроков (общие для холдинга): срок по умолчанию, напоминания, SLA отчётов.
+/// Настройки сроков (общие для организации): срок по умолчанию, напоминания, SLA отчётов.
 @MainActor
 struct DeadlineSettingsView: View {
     @State private var s = DeadlineSettings(defaultTaskDeadlineDays: 7, workingDaysOnly: true, remindDaysBefore: 1, remindHourLocal: 9, reportSlaInternalHours: 24, reportSlaExternalHours: 48)
@@ -43,7 +43,7 @@ struct DeadlineSettingsView: View {
             } header: {
                 Text("Срок отправки отчёта после встречи")
             } footer: {
-                Text("Правило холдинга: команде — в течение 24 часов, клиенту — 48 часов. Показывается на экране встречи.")
+                Text("Рекомендуемые сроки: команде — в течение 24 часов, клиенту — 48 часов. Показываются на экране встречи.")
             }
             if let error { Section { ErrorBanner(message: error) } }
         }

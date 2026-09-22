@@ -1,5 +1,5 @@
 {
-  "name": "@adv/server",
+  "name": "@lakonik/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
     "env:railway": "bash scripts/railway-sync-keys.sh"
   },
   "dependencies": {
-    "@adv/shared": "workspace:*",
+    "@lakonik/shared": "workspace:*",
     "@anthropic-ai/sdk": "^0.125.0",
     "@aws-sdk/client-s3": "^3.1131.0",
     "@aws-sdk/s3-request-presigner": "^3.1131.0",

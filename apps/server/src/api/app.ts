@@ -50,7 +50,7 @@ export function createApp() {
 
   app.doc("/api/openapi.json", {
     openapi: "3.1.0",
-    info: { title: "ADV Meetings API", version: "0.1.0", description: "Запись встреч → транскрибация → контакт-репорт по шаблону ADV" },
+    info: { title: "Lakonik API", version: "0.1.0", description: "Запись встреч → транскрибация → контакт-репорт по шаблону ADV" },
     servers: [{ url: cfg.BASE_URL }],
   });
   app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer" });

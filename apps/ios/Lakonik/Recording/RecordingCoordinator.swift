@@ -412,7 +412,7 @@ final class RecordingCoordinator {
         } else {
             granted = await withCheckedContinuation { c in AVAudioSession.sharedInstance().requestRecordPermission { c.resume(returning: $0) } }
         }
-        guard granted else { throw NSError(domain: "Recording", code: 403, userInfo: [NSLocalizedDescriptionKey: "Нет доступа к микрофону. Разрешите его в Настройках → ADV Meetings."]) }
+        guard granted else { throw NSError(domain: "Recording", code: 403, userInfo: [NSLocalizedDescriptionKey: "Нет доступа к микрофону. Разрешите его в Настройках → Lakonik."]) }
     }
 }
 

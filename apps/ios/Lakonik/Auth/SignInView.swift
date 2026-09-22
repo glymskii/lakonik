@@ -23,7 +23,7 @@ struct SignInView: View {
                     Image(systemName: "waveform.badge.mic")
                         .font(.system(size: 56))
                         .foregroundStyle(.tint)
-                    Text("ADV Meetings").font(.largeTitle.bold())
+                    Text("Lakonik").font(.largeTitle.bold())
                     Text("Запись встреч → расшифровка → контакт-репорт")
                         .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
@@ -88,7 +88,7 @@ struct SignInView: View {
                 .frame(height: 48)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text("Вход доступен сотрудникам агентств холдинга ADV с корпоративной почты.")
+                Text("Введите рабочую почту — код для входа придёт письмом.")
                     .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 Spacer()
             }

@@ -2,7 +2,7 @@
  * Демо-данные для скриншотов и презентаций: пользователь, колллеги, клиентский бриф с эталонным транскриптом
  * (4 спикера, роли, владелец записи) и отчётом по шаблону «Брифинг от клиента», задачи, ещё три встречи для
  * списка и вкладки задач. Все имена и бренды вымышленные. Повторный запуск пересоздаёт данные.
- *   pnpm --filter @adv/server exec tsx --env-file=.env scripts/seed-showcase.ts [email]
+ *   pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/seed-showcase.ts [email]
  * Вход в приложение — по коду на этот email (локально без RESEND_API_KEY код печатается в лог API).
  */
 import { randomUUID } from "node:crypto";

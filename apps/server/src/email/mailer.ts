@@ -33,10 +33,10 @@ export async function sendMail(mail: Mail): Promise<void> {
 
 export function otpEmail(otp: string) {
   return {
-    subject: `${otp} — код входа в ADV Meetings`,
+    subject: `${otp} — код входа в Lakonik`,
     text: `Ваш код входа: ${otp}\nКод действует 5 минут. Если вы не запрашивали вход — проигнорируйте письмо.`,
     html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px">
-  <h2 style="margin:0 0 16px">Код входа в ADV Meetings</h2>
+  <h2 style="margin:0 0 16px">Код входа в Lakonik</h2>
   <div style="font-size:32px;letter-spacing:8px;font-weight:700;padding:16px 0">${otp}</div>
   <p style="color:#555">Код действует 5 минут. Если вы не запрашивали вход — просто проигнорируйте это письмо.</p>
 </div>`,

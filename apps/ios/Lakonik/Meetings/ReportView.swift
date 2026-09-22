@@ -184,7 +184,7 @@ struct MeetingInfoView: View {
                     Text(Fmt.dateTime.string(from: detail.reportDueAt))
                         .foregroundStyle(detail.reportDueAt < Date() && detail.status == .done ? .red : .primary)
                 }
-                Text("По регламенту холдинга: \(detail.reportSlaHours) ч после встречи (настраивается в Настройках → Сроки)").font(.caption).foregroundStyle(.secondary)
+                Text("Срок отчёта: \(detail.reportSlaHours) ч после встречи (настраивается в Настройках → Сроки)").font(.caption).foregroundStyle(.secondary)
                 LabeledContent("Конфиденциальность", value: detail.confidentiality == "restricted" ? "Ограниченная" : "Стандартная")
             }
             if !detail.contextFields.isEmpty {
@@ -373,7 +373,7 @@ struct SharesSheet: View {
                 Section("Добавить коллегу") {
                     NavigationLink {
                         UserPickerView(exclude: Set(shares.map(\.recipientEmail))) { u in email = u.email; Task { await add() } }
-                    } label: { Label("Выбрать из аккаунтов холдинга", systemImage: "person.2.badge.plus") }
+                    } label: { Label("Выбрать из коллег", systemImage: "person.2.badge.plus") }
                     TextField("Или почта вручную", text: $email).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
                     Toggle("Вместе с транскриптом", isOn: $withTranscript)
                     Button("Поделиться") { Task { await add() } }.disabled(!email.contains("@"))
@@ -401,7 +401,7 @@ struct SharesSheet: View {
 }
 
 
-/// Выбор коллеги из аккаунтов холдинга (имя, фамилия, почта, агентство)
+/// Выбор коллеги из аккаунтов (имя, фамилия, почта, агентство)
 @MainActor
 struct UserPickerView: View {
     var exclude: Set<String> = []

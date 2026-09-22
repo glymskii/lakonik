@@ -1,7 +1,7 @@
 /**
  * Дополнение к seed-showcase для скриншотов памятки сотрудникам: убирает тестовые встречи демо-пользователя
  * и добавляет встречу в статусе «Расшифровка готова» с подсказками ИИ по спикерам (экран «Кто говорил»).
- *   pnpm --filter @adv/server exec tsx --env-file=.env scripts/seed-guide.ts [email]
+ *   pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/seed-guide.ts [email]
  */
 import { and, eq, inArray, like, or } from "drizzle-orm";
 import { closeDb, db } from "../src/db/client.js";

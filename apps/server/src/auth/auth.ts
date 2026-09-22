@@ -59,7 +59,7 @@ async function generateAppleClientSecret(clientId: string, teamId: string, keyId
 export function createAuth() {
   const cfg = config();
   return betterAuth({
-    appName: "ADV Meetings",
+    appName: "Lakonik",
     baseURL: cfg.BASE_URL,
     basePath: "/api/auth",
     secret: cfg.BETTER_AUTH_SECRET,
@@ -94,7 +94,7 @@ export function createAuth() {
             if (!isEmailAllowed(u.email, all)) {
               logger.warn({ email: u.email }, "Регистрация отклонена: домен не в allowlist");
               throw new APIError("FORBIDDEN", {
-                message: "Вход доступен только с корпоративной почты агентств холдинга ADV.",
+                message: "Вход доступен только с корпоративной почты вашей организации.",
               });
             }
             const domain = emailDomain(u.email);

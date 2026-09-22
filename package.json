@@ -4,14 +4,14 @@
   "packageManager": "pnpm@10.33.4",
   "engines": { "node": ">=22" },
   "scripts": {
-    "dev": "pnpm --filter @adv/server dev",
-    "worker": "pnpm --filter @adv/server worker",
+    "dev": "pnpm --filter @lakonik/server dev",
+    "worker": "pnpm --filter @lakonik/server worker",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "db:generate": "pnpm --filter @adv/server db:generate",
-    "db:migrate": "pnpm --filter @adv/server db:migrate",
-    "db:seed": "pnpm --filter @adv/server db:seed",
+    "db:generate": "pnpm --filter @lakonik/server db:generate",
+    "db:migrate": "pnpm --filter @lakonik/server db:migrate",
+    "db:seed": "pnpm --filter @lakonik/server db:seed",
     "templates:extract": "tsx scripts/extract-templates.ts"
   },
   "devDependencies": {

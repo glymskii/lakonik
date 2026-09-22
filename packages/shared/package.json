@@ -1,5 +1,5 @@
 {
-  "name": "@adv/shared",
+  "name": "@lakonik/shared",
   "version": "0.1.0",
   "private": true,
   "description": "Общие артефакты: шаблоны контакт-репортов ADV, JSON-схема отчёта",

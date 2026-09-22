@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct ADVMeetingsApp: App {
+struct LakonikApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var auth = AuthService()
     @State private var store = TemplateStore()

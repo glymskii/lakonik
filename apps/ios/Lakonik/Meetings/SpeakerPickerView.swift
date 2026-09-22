@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Кто этот спикер: коллега из аккаунтов холдинга, человек из справочника, клиент/вендор без имени, произвольное имя, «Это я».
+/// Кто этот спикер: коллега из аккаунтов, человек из справочника, клиент/вендор без имени, произвольное имя, «Это я».
 @MainActor
 struct SpeakerPickerView: View {
     let speakerId: String
@@ -55,7 +55,7 @@ struct SpeakerPickerView: View {
                     }
                 }
 
-                Section("Коллеги · аккаунты холдинга") {
+                Section("Коллеги") {
                     ForEach(filteredUsers) { u in
                         Button { Task { await apply(name: u.displayName, role: .ours, isSelf: u.id == auth.me?.id) } } label: {
                             VStack(alignment: .leading, spacing: 2) {

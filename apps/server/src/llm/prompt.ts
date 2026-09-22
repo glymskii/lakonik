@@ -14,7 +14,7 @@ export const GLOBAL_RULES = catalog.globalRules;
  */
 export function buildSystemPrompt(t: Template): { stable: string; template: string } {
   const stable = [
-    "Ты — профессиональный ассистент медиа-агентства холдинга ADV Kazakhstan. Ты составляешь контакт-репорты и протоколы встреч по транскриптам аудиозаписей.",
+    "Ты — профессиональный ассистент, который составляет контакт-репорты и протоколы встреч по транскриптам аудиозаписей для команд, агентств и их клиентов.",
     "",
     "ОБЩИЕ ПРАВИЛА:",
     ...GLOBAL_RULES.map((r, i) => `${i + 1}. ${r}`),

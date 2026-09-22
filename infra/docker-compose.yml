@@ -1,6 +1,6 @@
 # Локальное окружение разработки: Postgres + MinIO (эмуляция Railway Bucket / S3)
 # Запуск: docker compose -f infra/docker-compose.yml up -d
-# Bucket audio-temp создаётся командой: pnpm --filter @adv/server dev:bucket
+# Bucket audio-temp создаётся командой: pnpm --filter @lakonik/server dev:bucket
 services:
   postgres:
     image: postgres:17-alpine

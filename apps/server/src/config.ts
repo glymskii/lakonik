@@ -41,7 +41,7 @@ const schema = z.object({
   STT_UPLOAD_MODE: z.enum(["auto", "url", "file"]).default("auto"),
 
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().default("ADV Meetings <noreply@example.com>"),
+  EMAIL_FROM: z.string().default("Lakonik <noreply@lakonik.app>"),
 
   ALLOWED_EMAIL_DOMAINS: csv,
   GOOGLE_CLIENT_IDS: csv,

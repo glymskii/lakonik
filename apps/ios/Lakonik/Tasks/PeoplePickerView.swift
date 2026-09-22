@@ -44,7 +44,7 @@ struct PeoplePickerView: View {
                     Button { showAdd = true } label: { Label("Добавить «\(query)»", systemImage: "person.badge.plus") }
                 }
             } header: {
-                Text("Справочник холдинга")
+                Text("Справочник")
             } footer: {
                 Text("Новые люди сохраняются в общую базу и доступны на всех устройствах.")
             }
@@ -59,7 +59,7 @@ struct PeoplePickerView: View {
                         }
                     }
                 } header: {
-                    Text("Коллеги · аккаунты холдинга")
+                    Text("Коллеги")
                 } footer: {
                     Text("Выбор коллеги добавит его в справочник ответственных.")
                 }

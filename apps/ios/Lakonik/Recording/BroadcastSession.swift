@@ -37,7 +37,7 @@ enum BroadcastStore {
     /// Расширение трансляции встроено в сборку (без него запись онлайн-встреч недоступна)
     static var isAvailable: Bool {
         guard let plugins = Bundle.main.builtInPlugInsURL else { return false }
-        return FileManager.default.fileExists(atPath: plugins.appending(path: "ADVMeetingsBroadcast.appex").path) && containerURL != nil
+        return FileManager.default.fileExists(atPath: plugins.appending(path: "LakonikBroadcast.appex").path) && containerURL != nil
     }
 
     static var sessionsDir: URL? {

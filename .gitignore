@@ -33,7 +33,7 @@ apps/ios/**/DerivedData/
 apps/ios/**/.build/
 
 # xcodegen output (генерируется: cd apps/ios && xcodegen generate)
-apps/ios/ADVMeetings.xcodeproj/
+apps/ios/Lakonik.xcodeproj/
 
 # Исходные документы заказчика и их сырой дамп — не публикуются
 docs/source/

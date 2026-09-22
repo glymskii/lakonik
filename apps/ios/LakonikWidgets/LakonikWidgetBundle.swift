@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct ADVMeetingsWidgetBundle: WidgetBundle {
+struct LakonikWidgetBundle: WidgetBundle {
     var body: some Widget {
         RecordingLiveActivity()
     }

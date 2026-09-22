@@ -1,7 +1,7 @@
 /**
  * Проверка ключа APNs: собирает JWT (ES256) из APNS_KEY_ID / APNS_TEAM_ID / APNS_PRIVATE_KEY(_FILE).
  * Если передан device token — отправляет тестовый push.
- *   pnpm --filter @adv/server exec tsx --env-file=.env scripts/apns-check.ts [deviceToken]
+ *   pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/apns-check.ts [deviceToken]
  */
 import { sendApns } from "../src/push/apns.js";
 import { config } from "../src/config.js";
