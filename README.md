@@ -142,6 +142,28 @@ pnpm --filter @lakonik/server env:railway
 
 Ключ ElevenLabs должен иметь разрешение Speech to Text. Ключ APNs — из Apple Developer → Keys с включённым APNs (Sandbox & Production); проверка: `scripts/apns-check.ts`.
 
+App Store Server Notifications v2: в App Store Connect → приложение → App Information → App Store Server Notifications указать `https://api.lakonik.app/api/billing/apple/notifications` (Production URL и Sandbox URL). Пока подписки проверяются в песочнице и TestFlight, на сервере нужен `APPSTORE_ALLOW_SANDBOX=true`.
+
+### Администрирование (scripts/admin.ts)
+
+Планы организаций, статистика и ручные тарифы. Скрипт ходит в базу напрямую; для прода — через `railway run`.
+
+```bash
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts org list
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts org plan "ADV Kazakhstan" enterprise --seats 100 --until 2026-12-31
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts org plan <id|название> free
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts org stats <id|название>
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts user list [строка]
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts user superadmin <email> on|off
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts user tier <email> pro --until 2026-12-31
+pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts user tier <email> free
+```
+
+- `org list` — командные организации: план, места, срок, число участников. `org stats` — участники, встречи всего и за текущий месяц, часы месяца против пула enterprise, расход на STT и LLM в долларах (месяц считается по Алматы).
+- `org plan <id|название>` — организацию можно указывать идентификатором или названием (подстрока, если совпадение одно). Срок `--until` действует до конца указанного дня по Алматы, после него план считается free.
+- `user tier` выдаёт ручную подписку (`manual.starter` / `manual.pro` / `manual.unlimited`) для тестов и компенсаций; `free` снимает только ручные подписки — покупку в App Store пользователь отменяет сам в настройках Apple ID.
+- `user superadmin` даёт доступ к админ-функциям (планы, статистика), но **не** к содержимому чужих встреч.
+
 ## API (основное)
 
 - `POST /api/auth/email-otp/send-verification-otp`, `POST /api/auth/sign-in/email-otp`, `POST /api/auth/sign-in/social` (Apple, ID-токен), `POST /api/auth/update-user`.
@@ -149,11 +171,27 @@ pnpm --filter @lakonik/server env:railway
 - `POST /api/meetings` (без `templateId` — быстрая запись, тип задаётся позже через `PATCH … { templateId }`), `GET /api/meetings`, `GET/PATCH/DELETE /api/meetings/:id`, `POST /api/meetings/:id/segments` → presigned PUT, `POST …/segments/:seq/complete`, `POST /api/meetings/:id/finalize`, `POST …/retry`, `GET …/events` (SSE).
 - `PATCH /api/meetings/:id/speakers` (имена, роли, владелец, `merges` для слияния дублей, `confirmed`), `POST /api/meetings/:id/reports` (первый отчёт из статуса `transcribed`, пересборка / ИИ-правка с `instructions`), `PATCH /api/meetings/:id/reports/:reportId` (ручная правка текста), `GET …/export?format=docx|pdf|md|txt`, `GET/POST/DELETE …/shares`.
 - `GET /api/tasks`, `PATCH/DELETE /api/tasks/:id`, `GET/POST /api/meetings/:id/tasks`, `GET/POST/PATCH/DELETE /api/people`, `GET/PUT /api/settings/deadlines`.
+- `GET /api/billing/entitlement` (тариф, лимиты, расход за день и месяц, `appAccountToken` для StoreKit), `POST /api/billing/apple/transactions` (подписанная транзакция StoreKit 2 после покупки или восстановления), `POST /api/billing/apple/notifications` (App Store Server Notifications v2, без авторизации — доверие по подписи).
+- `DELETE /api/me` — удаление аккаунта: личное пространство и организации, где пользователь был один, удаляются; из остальных он выходит, а его встречи переходят владельцу организации (конфиденциальные удаляются); токен Sign in with Apple отзывается. Если пользователь — единственный владелец организации с другими участниками, ответ 409 `account.sole_owner` со списком таких организаций.
+
+Активное пространство передаётся заголовком `X-Organization-Id`, часовой пояс устройства (границы суток и месяца для квот) — `X-Timezone` (IANA, по умолчанию `Asia/Almaty`).
+
+### Тарифы и квоты
+
+Лимиты уровней — в `src/billing/tiers.ts` (таблица тарифов — раздел 8 `docs/lakonik-1.0.md`). Уровень пользователя = максимальная активная подписка; в организации с планом `enterprise` все участники получают Enterprise, а часы идут в общий пул (20 ч × мест). Нарушение квоты — HTTP 402 с телом `{error, code, limit, used, resetsAt}`, где `code` — `quota.daily` | `quota.duration` | `quota.monthly` | `feature.online_meetings`; клиент показывает по нему экран тарифа. Месячные часы проверяются при создании встречи, но не при `finalize`: начатая запись всегда дописывается. Длительность сверх лимита тарифа (допуск 10 %) переводит встречу в `failed` — при `finalize` для записей и после склейки аудио для импорта.
+
+Проверку подписей Apple обеспечивают корневые сертификаты в `apps/server/assets/apple/*.cer` (в образ копируются вместе с `assets`). Обновить:
+
+```bash
+curl -o apps/server/assets/apple/AppleRootCA-G3.cer https://www.apple.com/certificateauthority/AppleRootCA-G3.cer
+```
+
+Без сертификатов эндпоинты покупок отвечают 503 с понятным текстом, остальной сервис работает как обычно.
 
 ## Тесты
 
 ```bash
-pnpm --filter @lakonik/server test        # vitest: сегментация STT, рендер отчётов, промпт, сроки задач
+pnpm --filter @lakonik/server test        # vitest: сегментация STT, рендер отчётов, промпт, сроки задач, тарифы и квоты
 pnpm --filter @lakonik/server typecheck
 ```
 
