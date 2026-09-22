@@ -50,6 +50,13 @@
       "when": 1789550177431,
       "tag": "0006_transcribed_speakers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790101207151,
+      "tag": "0007_organizations",
+      "breakpoints": true
     }
   ]
 }

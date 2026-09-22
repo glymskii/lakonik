@@ -66,6 +66,13 @@ const schema = z.object({
   FAKE_PROVIDERS: bool,
   /** Реестр корпоративных серверов для входа по коду организации: JSON [{code,name,apiBaseUrl,hint?}] */
   ORG_SERVERS: z.string().optional(),
+  /** Перенос одиночного контура в организацию: название, владелец, план (см. db/organizations.ts) */
+  LEGACY_ORG_NAME: z.string().optional().transform((v) => (v && v.trim() ? v.trim() : undefined)),
+  LEGACY_ORG_OWNER_EMAIL: z.string().optional().transform((v) => (v && v.trim() ? v.trim() : undefined)),
+  LEGACY_ORG_PLAN: z.enum(["free", "enterprise"]).default("enterprise"),
+  LEGACY_ORG_SEATS: z.coerce.number().int().positive().optional(),
+  /** Дата окончания плана YYYY-MM-DD (конец дня по Алматы) */
+  LEGACY_ORG_UNTIL: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   SENTRY_DSN: z.string().optional(),
   AMPLITUDE_API_KEY: z.string().optional(),
 });

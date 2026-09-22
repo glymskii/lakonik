@@ -19,7 +19,9 @@ export const user = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     agencyId: text("agency_id"),
-    role: text("role").default("member").notNull(), // member | agency_admin | holding_admin
+    role: text("role").default("member").notNull(), // member | agency_admin | holding_admin (устарело: доступ решают members)
+    /** Владелец сервиса: админ-эндпоинты (планы организаций, статистика), но не содержимое встреч */
+    isSuperadmin: boolean("is_superadmin").default(false).notNull(),
   },
   (t) => [index("user_agency_idx").on(t.agencyId)],
 );

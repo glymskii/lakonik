@@ -8,6 +8,7 @@ import { logger } from "../logger.js";
 import { otpEmail, sendMail } from "../email/mailer.js";
 import { emailDomain, isEmailAllowed } from "./allowlist.js";
 import { track } from "../analytics/amplitude.js";
+import { ensurePersonalOrg, joinByDomain } from "../db/organizations.js";
 import { agencies } from "../db/schema/index.js";
 
 async function agencyDomains(): Promise<{ id: string; domains: string[] }[]> {
@@ -103,6 +104,11 @@ export function createAuth() {
             return { data: { ...u, agencyId: agency?.id ?? null, role: "member" } };
           },
           after: async (u) => {
+            await db().transaction(async (tx) => {
+              await ensurePersonalOrg(tx, u);
+              const joined = await joinByDomain(tx, u);
+              if (joined.length) logger.info({ email: u.email, orgs: joined }, "Автовступление по домену");
+            });
             track(u.id, "signup", { domain: emailDomain(u.email) });
           },
         },

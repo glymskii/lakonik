@@ -9,10 +9,12 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
+import { organizations } from "./org.js";
 import type {
   ActionItem,
   ContextFields,
@@ -71,6 +73,8 @@ export const meetingTemplates = pgTable(
   "meeting_templates",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    /** null — встроенный шаблон; иначе приватный шаблон организации */
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
     code: text("code").notNull(),
     version: integer("version").notNull().default(1),
     group: text("group").notNull(), // internal | client | vendor
@@ -96,7 +100,11 @@ export const meetingTemplates = pgTable(
     isDraft: boolean("is_draft").notNull().default(false),
     ...timestamps,
   },
-  (t) => [uniqueIndex("meeting_templates_code_version_idx").on(t.code, t.version)],
+  (t) => [
+    // NULLS NOT DISTINCT: у встроенных шаблонов (organization_id = null) код+версия тоже уникальны
+    unique("meeting_templates_org_code_version_uq").on(t.organizationId, t.code, t.version).nullsNotDistinct(),
+    index("meeting_templates_org_idx").on(t.organizationId),
+  ],
 );
 
 export const meetings = pgTable(
@@ -107,6 +115,8 @@ export const meetings = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     agencyId: text("agency_id").references(() => agencies.id),
+    /** Пространство, которому принадлежит встреча (null только до переноса данных) */
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
     templateId: uuid("template_id")
       .notNull()
       .references(() => meetingTemplates.id),
@@ -134,6 +144,7 @@ export const meetings = pgTable(
   (t) => [
     index("meetings_owner_idx").on(t.ownerId, t.createdAt),
     index("meetings_agency_idx").on(t.agencyId, t.createdAt),
+    index("meetings_org_idx").on(t.organizationId, t.createdAt),
     index("meetings_status_idx").on(t.status),
   ],
 );
@@ -276,6 +287,7 @@ export const usageEvents = pgTable(
     meetingId: uuid("meeting_id").references(() => meetings.id, { onDelete: "set null" }),
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     agencyId: text("agency_id"),
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "set null" }),
     kind: text("kind").notNull(), // stt | llm | export
     provider: text("provider").notNull(),
     model: text("model"),
@@ -285,7 +297,7 @@ export const usageEvents = pgTable(
     meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("usage_events_agency_idx").on(t.agencyId, t.createdAt)],
+  (t) => [index("usage_events_agency_idx").on(t.agencyId, t.createdAt), index("usage_events_org_idx").on(t.organizationId, t.createdAt)],
 );
 
 /** Справочник ответственных (общий для холдинга): добавляется вручную или из action items отчётов. */
@@ -299,12 +311,17 @@ export const people = pgTable(
     company: text("company"),
     email: text("email"),
     agencyId: text("agency_id").references(() => agencies.id),
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
     source: text("source").notNull().default("manual"), // manual | ai
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     isActive: boolean("is_active").notNull().default(true),
     ...timestamps,
   },
-  (t) => [uniqueIndex("people_normalized_name_idx").on(t.normalizedName), index("people_active_idx").on(t.isActive)],
+  (t) => [
+    // Имя уникально внутри организации (раньше — глобально)
+    uniqueIndex("people_org_normalized_name_idx").on(t.organizationId, t.normalizedName),
+    index("people_active_idx").on(t.isActive),
+  ],
 );
 
 export const taskStatus = pgEnum("task_status", ["open", "done"]);
@@ -322,6 +339,7 @@ export const tasks = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     agencyId: text("agency_id"),
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
     position: integer("position").notNull().default(0),
     task: text("task").notNull(),
     normalizedTask: text("normalized_task").notNull(),
@@ -340,6 +358,7 @@ export const tasks = pgTable(
   },
   (t) => [
     index("tasks_owner_status_idx").on(t.ownerId, t.status, t.deadlineDate),
+    index("tasks_org_idx").on(t.organizationId, t.status),
     index("tasks_meeting_idx").on(t.meetingId),
     index("tasks_assignee_idx").on(t.assigneePersonId),
   ],

@@ -21,6 +21,7 @@ const meeting = {
   id: "00000000-0000-0000-0000-000000000000",
   ownerId: "e2e",
   agencyId: null,
+  organizationId: null,
   templateId: tpl.id,
   templateCode: tpl.code,
   templateVersion: tpl.version,

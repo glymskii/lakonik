@@ -111,6 +111,15 @@ export interface DeadlineSettings {
   reportSlaExternalHours?: number;
 }
 
+/** Настройки организации (jsonb organizations.settings) */
+export interface OrgSettings {
+  deadlines?: DeadlineSettings;
+  /** Словарь терминов для распознавания речи (бренды, имена, жаргон) */
+  keyterms?: string[];
+  /** Организация создана переносом данных одиночного контура (агентства ADV / self-hosted сервер) */
+  legacy?: boolean;
+}
+
 export const DEFAULT_DEADLINE_SETTINGS: Required<DeadlineSettings> = {
   defaultTaskDeadlineDays: 7,
   workingDaysOnly: true,
