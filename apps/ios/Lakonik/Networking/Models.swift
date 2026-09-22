@@ -27,6 +27,8 @@ struct TemplateSection: Codable, Hashable, Identifiable {
 
 struct MeetingTemplate: Codable, Hashable, Identifiable {
     let id: String
+    /// nil — встроенный шаблон; иначе приватный шаблон организации
+    var organizationId: String? = nil
     let code: String
     let version: Int
     let group: String
@@ -601,7 +603,85 @@ struct Me: Codable, Hashable {
     let role: String
     let agencyId: String?
     let agencyName: String?
+    /// Пространства пользователя (личное первым); нет в ответе старого сервера
+    var organizations: [OrganizationBrief] = []
+    var defaultOrganizationId: String?
+
+    enum CodingKeys: String, CodingKey { case id, email, name, image, role, agencyId, agencyName, organizations, defaultOrganizationId }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        email = try c.decode(String.self, forKey: .email)
+        name = try c.decode(String.self, forKey: .name)
+        image = try c.decodeIfPresent(String.self, forKey: .image)
+        role = try c.decode(String.self, forKey: .role)
+        agencyId = try c.decodeIfPresent(String.self, forKey: .agencyId)
+        agencyName = try c.decodeIfPresent(String.self, forKey: .agencyName)
+        organizations = try c.decodeIfPresent([OrganizationBrief].self, forKey: .organizations) ?? []
+        defaultOrganizationId = try c.decodeIfPresent(String.self, forKey: .defaultOrganizationId)
+    }
 }
+
+/// Пространство: личное или командная организация
+struct OrganizationBrief: Codable, Hashable, Identifiable {
+    let id: String
+    let name: String
+    let kind: String // personal | team
+    let role: String // owner | admin | member
+    let plan: String // free | enterprise
+    let planSeats: Int?
+    let planUntil: Date?
+    let membersCount: Int
+
+    var isPersonal: Bool { kind == "personal" }
+    var isAdmin: Bool { role == "owner" || role == "admin" }
+    var isOwner: Bool { role == "owner" }
+    var roleTitle: String { role == "owner" ? "Владелец" : role == "admin" ? "Администратор" : "Участник" }
+    var planTitle: String { plan == "enterprise" ? "Enterprise" : "Free" }
+}
+
+struct OrgMember: Codable, Hashable, Identifiable {
+    let userId: String
+    let name: String
+    let email: String
+    let role: String
+    let joinedAt: Date
+    var id: String { userId }
+    var roleTitle: String { role == "owner" ? "Владелец" : role == "admin" ? "Администратор" : "Участник" }
+}
+
+struct OrgDomain: Codable, Hashable { let domain: String; let verified: Bool }
+struct PendingInvitation: Codable, Hashable, Identifiable { let id: String; let email: String; let role: String; let expiresAt: Date }
+
+struct Organization: Codable, Hashable {
+    let id: String
+    let name: String
+    let kind: String
+    let plan: String
+    let planSeats: Int?
+    let planUntil: Date?
+    let role: String
+    let allowDomainJoin: Bool
+    let inviteLink: String?
+    let domains: [OrgDomain]
+    let membersCount: Int
+    let members: [OrgMember]
+    let keyterms: [String]
+    let pendingInvitations: [PendingInvitation]
+
+    var isAdmin: Bool { role == "owner" || role == "admin" }
+    var isOwner: Bool { role == "owner" }
+    var brief: OrganizationBrief { OrganizationBrief(id: id, name: name, kind: kind, role: role, plan: plan, planSeats: planSeats, planUntil: planUntil, membersCount: membersCount) }
+}
+
+struct SuggestedOrg: Codable, Hashable, Identifiable { let id: String; let name: String; let membersCount: Int }
+struct JoinInfo: Codable, Hashable { let organizationName: String; let membersCount: Int; let kind: String }
+struct CreateOrgBody: Encodable { let name: String }
+struct PatchOrgBody: Encodable { var name: String? = nil; var allowDomainJoin: Bool? = nil; var keyterms: [String]? = nil }
+struct InviteBody: Encodable { let email: String; let role: String }
+struct MemberRoleBody: Encodable { let role: String }
+struct RemoveMemberBody: Encodable { let transferTo: String? }
+struct TransferBody: Encodable { let toUserId: String }
 
 struct OTPSendBody: Encodable { let email: String; let type: String }
 struct OTPVerifyBody: Encodable { let email: String; let otp: String }

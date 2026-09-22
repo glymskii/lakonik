@@ -102,6 +102,7 @@ struct TasksView: View {
             }
             .onChange(of: filter) { _, _ in Task { await load() } }
             .task { await load(); people = (try? await APIClient.shared.people()) ?? [] }
+            .onReceive(NotificationCenter.default.publisher(for: .workspaceChanged)) { _ in Task { await load(); people = (try? await APIClient.shared.people()) ?? [] } }
             .sheet(item: $editing) { t in
                 TaskEditorView(task: t) { _ in await load() } onOpenMeeting: { id in editing = nil; path.append(id) }
             }

@@ -7,7 +7,11 @@ struct SettingsView: View {
     @State private var apiOverride = UserDefaults.standard.string(forKey: AppConfig.overrideKey) ?? ""
     @State private var localMeetings: [LocalMeeting] = []
     @State private var confirmSignOut = false
+    @State private var confirmDelete = false
+    @State private var deleteText = ""
+    @State private var deleteError: String?
     @State private var name = ""
+    @State private var workspace = WorkspaceStore.shared
 
     var body: some View {
         NavigationStack {
@@ -23,14 +27,37 @@ struct SettingsView: View {
                                 .onSubmit { Task { try? await auth.updateName(name) } }
                         }
                         LabeledContent("Почта", value: me.email)
-                        if let a = me.agencyName { LabeledContent("Агентство", value: a) }
-                        LabeledContent("Роль", value: me.role == "member" ? "Сотрудник" : me.role)
                     }
                     Button("Выйти", role: .destructive) { confirmSignOut = true }
                 } header: {
                     Text("Аккаунт")
                 } footer: {
                     Text("Имя подставляется в транскрипт и отчёт, когда вы отмечаете себя среди спикеров («Это я»).")
+                }
+                Section {
+                    ForEach(workspace.all) { org in
+                        if org.isPersonal {
+                            HStack {
+                                Label(org.name, systemImage: "person")
+                                Spacer()
+                                if org.id == workspace.current?.id { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                            }
+                            .contentShape(Rectangle()).onTapGesture { workspace.select(org) }
+                        } else {
+                            NavigationLink { OrganizationView(orgId: org.id) } label: {
+                                HStack {
+                                    Label(org.name, systemImage: "building.2")
+                                    Spacer()
+                                    Text(org.roleTitle).font(.caption).foregroundStyle(.secondary)
+                                    if org.id == workspace.current?.id { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Пространства")
+                } footer: {
+                    Text("Галочкой отмечено активное пространство — в нём создаются записи. Переключить можно и в списке встреч.")
                 }
                 Section("Задачи и сроки") {
                     NavigationLink { DeadlineSettingsView() } label: { Label("Сроки задач и отчётов", systemImage: "calendar.badge.clock") }
@@ -72,6 +99,11 @@ struct SettingsView: View {
                     LabeledContent("Текущий", value: AppConfig.apiBaseURL.absoluteString).font(.caption)
                 } header: { Text("Сервер (отладка)") } footer: { Text("Только в Debug-сборке. По умолчанию: \(AppConfig.defaultBaseURL.absoluteString)") }
                 #endif
+                Section {
+                    Button("Удалить аккаунт", role: .destructive) { confirmDelete = true }
+                } footer: {
+                    Text("Удаляются профиль, личное пространство со всеми записями и участие в организациях. Активная подписка отменяется в Настройках Apple ID.")
+                }
                 Section("О приложении") {
                     LabeledContent("Версия", value: (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "")
                     Text("Lakonik — запись встреч, расшифровка, отчёт и задачи.").font(.footnote).foregroundStyle(.secondary)
@@ -83,8 +115,25 @@ struct SettingsView: View {
             .confirmationDialog("Выйти из аккаунта?", isPresented: $confirmSignOut) {
                 Button("Выйти", role: .destructive) { Task { await auth.signOut() } }
             }
+            .alert("Удалить аккаунт?", isPresented: $confirmDelete) {
+                TextField("Введите УДАЛИТЬ", text: $deleteText)
+                Button("Удалить", role: .destructive) { Task { await deleteAccount() } }.disabled(deleteText != "УДАЛИТЬ")
+                Button("Отмена", role: .cancel) { deleteText = "" }
+            } message: { Text("Это действие необратимо. Если вы единственный владелец организации с участниками — сначала передайте владение.") }
+            .alert("Не удалось удалить аккаунт", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+                Button("OK") { deleteError = nil }
+            } message: { Text(deleteError ?? "") }
         }
     }
 
     private func reload() async { localMeetings = await LocalStore.shared.withAudioOrPending() }
+
+    private func deleteAccount() async {
+        deleteText = ""
+        do {
+            try await APIClient.shared.deleteAccount()
+            await LocalStore.shared.removeAll()
+            auth.signOutLocally()
+        } catch { deleteError = error.localizedDescription }
+    }
 }

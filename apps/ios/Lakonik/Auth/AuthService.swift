@@ -41,7 +41,11 @@ final class AuthService {
     }
 
     func refreshMe() async {
-        do { me = try await api.me() } catch { lastError = error.localizedDescription }
+        do {
+            let m = try await api.me()
+            me = m
+            WorkspaceStore.shared.apply(me: m)
+        } catch { lastError = error.localizedDescription }
     }
 
     func signOut() async {
@@ -51,6 +55,7 @@ final class AuthService {
 
     func signOutLocally() {
         Keychain.shared.token = nil
+        WorkspaceStore.shared.clear()
         AppConfig.clearOrg() // при выходе забываем корпоративный сервер: следующий вход снова спросит код организации
         me = nil
         isSignedIn = false

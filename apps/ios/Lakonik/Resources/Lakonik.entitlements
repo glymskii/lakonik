@@ -6,6 +6,10 @@
 	<array>
 		<string>group.kz.adv.meetings</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:lakonik.app</string>
+	</array>
 	<key>aps-environment</key>
 	<string>development</string>
 	<key>com.apple.developer.applesignin</key>

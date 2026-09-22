@@ -27,6 +27,8 @@ final class APIClient {
     private let encoder: JSONEncoder
 
     var tokenProvider: () -> String? = { Keychain.shared.token }
+    /// Активное пространство: заголовок X-Organization-Id на каждый запрос к данным
+    var organizationProvider: () -> String? = { nil }
     var onUnauthorized: (() -> Void)?
 
     /// Сессия без cookie: аутентификация только по bearer-токену. Иначе URLSession сохраняет cookie сессии
@@ -74,6 +76,8 @@ final class APIClient {
         req.httpMethod = method
         req.setValue(accept, forHTTPHeaderField: "Accept")
         if auth, let token = tokenProvider() { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+        if auth, let org = organizationProvider() { req.setValue(org, forHTTPHeaderField: "X-Organization-Id") }
+        req.setValue(TimeZone.current.identifier, forHTTPHeaderField: "X-Timezone")
         if let body {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try encoder.encode(AnyEncodable(body))
@@ -141,6 +145,28 @@ extension APIClient {
 
     func signOut() async throws { try await raw("POST", "/api/auth/sign-out", body: EmptyBody()) }
     func me() async throws -> Me { try await request("GET", "/api/me") }
+    func deleteAccount() async throws { try await raw("DELETE", "/api/me") }
+
+    // MARK: Организации
+    func createOrganization(name: String) async throws -> Organization { try await request("POST", "/api/organizations", body: CreateOrgBody(name: name)) }
+    func organization(_ id: String) async throws -> Organization { try await request("GET", "/api/organizations/\(id)") }
+    func updateOrganization(_ id: String, _ body: PatchOrgBody) async throws -> Organization { try await request("PATCH", "/api/organizations/\(id)", body: body) }
+    func rotateInviteLink(_ id: String) async throws -> String {
+        struct R: Decodable { let inviteLink: String }
+        let r: R = try await request("POST", "/api/organizations/\(id)/invite-link")
+        return r.inviteLink
+    }
+    func invite(_ id: String, email: String, role: String) async throws { try await raw("POST", "/api/organizations/\(id)/invitations", body: InviteBody(email: email, role: role)) }
+    func revokeInvitation(_ id: String, invitationId: String) async throws { try await raw("DELETE", "/api/organizations/\(id)/invitations/\(invitationId)") }
+    func setMemberRole(_ id: String, userId: String, role: String) async throws { try await raw("PATCH", "/api/organizations/\(id)/members/\(userId)", body: MemberRoleBody(role: role)) }
+    func removeMember(_ id: String, userId: String, transferTo: String?) async throws { try await raw("DELETE", "/api/organizations/\(id)/members/\(userId)", body: RemoveMemberBody(transferTo: transferTo)) }
+    func transferOwnership(_ id: String, to userId: String) async throws -> Organization { try await request("POST", "/api/organizations/\(id)/transfer", body: TransferBody(toUserId: userId)) }
+    func leaveOrganization(_ id: String) async throws { try await raw("POST", "/api/organizations/\(id)/leave") }
+    func deleteOrganization(_ id: String) async throws { try await raw("DELETE", "/api/organizations/\(id)") }
+    func suggestedOrganizations() async throws -> [SuggestedOrg] { try await request("GET", "/api/organizations/suggested") }
+    func joinByDomain(_ id: String) async throws -> OrganizationBrief { try await request("POST", "/api/organizations/\(id)/join") }
+    func joinInfo(token: String) async throws -> JoinInfo { try await request("GET", "/api/join/\(token)", auth: false) }
+    func join(token: String) async throws -> OrganizationBrief { try await request("POST", "/api/join/\(token)") }
     func registerDevice(_ body: DeviceBody) async throws { try await raw("POST", "/api/me/devices", body: body) }
 
     /// Адрес сервера организации по коду. Идёт в справочник (сервер по умолчанию) — до того, как выбран корпоративный сервер.

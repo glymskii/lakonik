@@ -15,6 +15,10 @@ struct LakonikApp: App {
                 .environment(store)
                 .environment(recorder)
                 .tint(Color("AccentColor"))
+                // Universal Link lakonik.app/join/<token>: приглашение в организацию (после входа покажем экран вступления)
+                .onOpenURL { url in
+                    if let token = WorkspaceStore.joinToken(from: url.absoluteString) { WorkspaceStore.shared.pendingJoinToken = token }
+                }
         }
     }
 }

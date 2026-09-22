@@ -58,6 +58,7 @@ struct StatusBadge: View {
     }
     private var icon: String {
         switch status {
+        case .transcribed: return "text.badge.checkmark"
         case .done: return "checkmark.circle.fill"
         case .failed: return "exclamationmark.triangle.fill"
         case .recording: return "record.circle"
@@ -66,6 +67,7 @@ struct StatusBadge: View {
     }
     private var color: Color {
         switch status {
+        case .transcribed: return .teal
         case .done: return .green
         case .failed: return .red
         case .recording: return .red

@@ -22,7 +22,7 @@ struct MeetingsListView: View {
             Group {
                 if items.isEmpty && !loading {
                     ContentUnavailableView {
-                        Label("Пока нет встреч", systemImage: "waveform")
+                        Label(WorkspaceStore.shared.isPersonal ? "Пока нет встреч" : "В «\(WorkspaceStore.shared.current?.name ?? "")» пока нет ваших встреч", systemImage: "waveform")
                     } description: {
                         Text("Нажмите «Записать встречу» — запись начнётся сразу. Тип встречи можно выбрать во время записи или после расшифровки; отчёт появится через несколько минут.")
                     } actions: {
@@ -58,6 +58,7 @@ struct MeetingsListView: View {
             .searchable(text: $query, prompt: "Поиск по названию")
             .onChange(of: query) { _, _ in Task { await load() } }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) { WorkspaceMenu() }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { Task { await startRecording() } } label: { Label("Записать встречу", systemImage: "record.circle") }
@@ -100,6 +101,10 @@ struct MeetingsListView: View {
             }
             .sheet(isPresented: $showOnline) { OnlineMeetingView() }
             .onReceive(NotificationCenter.default.publisher(for: .meetingsChanged)) { _ in Task { await load() } }
+            .onReceive(NotificationCenter.default.publisher(for: .workspaceChanged)) { _ in
+                items = []
+                Task { await templates.refresh(force: true); await load() }
+            }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     broadcast = BroadcastStore.active()

@@ -140,6 +140,13 @@ actor LocalStore {
         persist()
     }
 
+    /// Удаление аккаунта: стереть все локальные записи и аудио
+    func removeAll() {
+        for id in meetings.keys { deleteAudio(meetingId: id) }
+        meetings.removeAll()
+        persist()
+    }
+
     private func persist() {
         guard let data = try? JSONEncoder().encode(meetings) else { return }
         try? data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])

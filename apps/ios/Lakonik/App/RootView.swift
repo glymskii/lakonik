@@ -3,12 +3,17 @@ import SwiftUI
 struct RootView: View {
     @Environment(AuthService.self) private var auth
     @Environment(RecordingCoordinator.self) private var recorder
+    @State private var workspace = WorkspaceStore.shared
 
     var body: some View {
         Group {
             if auth.isSignedIn {
                 MainTabs()
                     .task { await auth.refreshMe() }
+                    .sheet(isPresented: Binding(get: { workspace.showOnboarding && workspace.pendingJoinToken == nil }, set: { workspace.showOnboarding = $0 })) { WorkspaceOnboardingView() }
+                    .sheet(isPresented: Binding(get: { workspace.pendingJoinToken != nil && auth.me != nil }, set: { if !$0 { workspace.pendingJoinToken = nil } })) {
+                        JoinOrganizationView(initialToken: workspace.pendingJoinToken)
+                    }
             } else {
                 SignInView()
             }
