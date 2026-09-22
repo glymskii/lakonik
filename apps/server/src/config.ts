@@ -54,6 +54,17 @@ const schema = z.object({
   APPLE_PRIVATE_KEY: z.string().optional(),
   APPLE_BUNDLE_ID: z.string().default("kz.adv.meetings"),
 
+  /** App Store Server API / уведомления v2: окружение подписей по умолчанию */
+  APPSTORE_ENVIRONMENT: z.enum(["Sandbox", "Production"]).default("Production"),
+  /** Принимать подписи песочницы (сборки из Xcode и TestFlight) */
+  APPSTORE_ALLOW_SANDBOX: bool,
+  /** Числовой id приложения в App Store — обязателен для проверки подписей Production */
+  APPSTORE_APP_APPLE_ID: z.coerce.number().int().positive().default(6812003830),
+  /** Ключ App Store Server API (сверка подписок раз в сутки); без него сверка пропускается */
+  APPSTORE_KEY_ID: z.string().optional(),
+  APPSTORE_ISSUER_ID: z.string().optional(),
+  APPSTORE_PRIVATE_KEY: z.string().optional(),
+
   APNS_KEY_ID: z.string().optional(),
   APNS_TEAM_ID: z.string().optional(),
   APNS_PRIVATE_KEY: z.string().optional(),

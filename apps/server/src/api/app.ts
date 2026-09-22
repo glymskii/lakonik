@@ -7,6 +7,7 @@ import { auth } from "../auth/auth.js";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import type { AppEnv } from "./middleware/auth.js";
+import { billingRoutes } from "./routes/billing.js";
 import { meetingsRoutes } from "./routes/meetings.js";
 import { meRoutes, usersRoutes } from "./routes/me.js";
 import { templatesRoutes } from "./routes/templates.js";
@@ -35,7 +36,7 @@ export function createApp() {
       logger.info({ method: c.req.method, path: c.req.path, status: c.res.status, ms: Date.now() - started, reqId: c.get("requestId"), user: user?.email ?? undefined }, "http");
     }
   });
-  app.use("/api/*", cors({ origin: [cfg.BASE_URL], credentials: true, allowHeaders: ["Authorization", "Content-Type"], exposeHeaders: ["set-auth-token"] }));
+  app.use("/api/*", cors({ origin: [cfg.BASE_URL], credentials: true, allowHeaders: ["Authorization", "Content-Type", "X-Organization-Id", "X-Timezone"], exposeHeaders: ["set-auth-token"] }));
 
   app.get("/health", (c) => c.json({ ok: true, service: "api", time: new Date().toISOString() }));
 
@@ -51,6 +52,7 @@ export function createApp() {
   app.route("/api/tasks", tasksRoutes);
   app.route("/api/people", peopleRoutes);
   app.route("/api/settings", settingsRoutes);
+  app.route("/api/billing", billingRoutes);
   app.route("/api/me", meRoutes);
   app.route("/api/users", usersRoutes);
 
@@ -64,6 +66,9 @@ export function createApp() {
   app.notFound((c) => c.json({ error: "Не найдено", code: "NOT_FOUND" }, 404));
   app.onError((err, c) => {
     if (err instanceof HTTPException) {
+      // Ошибки с собственным телом (квоты 402, account.sole_owner 409) отдаём как есть — в них есть code и детали
+      const custom = err.getResponse();
+      if (custom.headers.get("content-type")?.includes("application/json")) return custom;
       return c.json({ error: err.message, code: String(err.status) }, err.status);
     }
     logger.error({ err, path: c.req.path, reqId: c.get("requestId") }, "Unhandled error");

@@ -15,6 +15,9 @@ import { config } from "../../config.js";
 import { logger } from "../../logger.js";
 import { loadMeetingWithAccess, requireOwner, type Access, accessibleMeetingsWhere } from "../authz.js";
 import { withOrg } from "../middleware/org.js";
+import { assertCanCreateMeeting, durationQuotaError, isOverDuration } from "../../billing/quota.js";
+import { tierOf } from "../../billing/entitlement.js";
+import { orgScopeById, orgScopeOf } from "../../billing/scope.js";
 import { currentTasks, getDeadlineSettings } from "../../tasks/service.js";
 import { taskDto } from "./tasks.js";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
@@ -33,6 +36,7 @@ import {
   SegmentRequestBody,
   SegmentUploadSchema,
   ShareBody,
+  QuotaErrorSchema,
   ShareSchema,
   SpeakersBody,
   StatusEventSchema,
@@ -164,11 +168,17 @@ meetingsRoutes.openapi(
     tags: ["meetings"],
     summary: "Создать встречу (перед началом записи)",
     request: { body: { content: { "application/json": { schema: CreateMeetingBody } } } },
-    responses: { 201: { description: "Создано", content: { "application/json": { schema: MeetingSummarySchema } } }, 404: { description: "Шаблон не найден", content: { "application/json": { schema: ErrorSchema } } } },
+    responses: {
+      201: { description: "Создано", content: { "application/json": { schema: MeetingSummarySchema } } },
+      402: { description: "Исчерпана квота тарифа", content: { "application/json": { schema: QuotaErrorSchema } } },
+      404: { description: "Шаблон не найден", content: { "application/json": { schema: ErrorSchema } } },
+    },
   }),
   async (c) => {
     const u = c.get("user");
     const body = c.req.valid("json");
+    // Квоты тарифа: онлайн-встречи, записей в день, часы в месяц (текущая идущая запись дописывается — см. finalize)
+    const ent = await assertCanCreateMeeting({ userId: u.id, org: orgScopeOf(c.get("org")), timezone: c.req.header("x-timezone") }, { online: body.online });
     const t = body.templateId ? await templateById(body.templateId) : await unclassifiedTemplate();
     const startedAt = body.startedAt ? new Date(body.startedAt) : new Date();
     const title = body.title?.trim() || autoTitle(startedAt, t);
@@ -195,7 +205,7 @@ meetingsRoutes.openapi(
         deviceId: body.deviceId ?? null,
       })
       .returning();
-    track(u.id, body.source === "imported" ? "file_imported" : "recording_started", { template: t.code, hasTemplate: t.code !== UNCLASSIFIED_TEMPLATE_CODE });
+    track(u.id, body.source === "imported" ? "file_imported" : "recording_started", { template: t.code, hasTemplate: t.code !== UNCLASSIFIED_TEMPLATE_CODE, tier: ent.tier, online: !!body.online });
     return c.json(summaryDto(m!, t, { hasTranscript: false, hasReport: false, isOwner: true }), 201);
   },
 );
@@ -389,7 +399,11 @@ meetingsRoutes.openapi(
     tags: ["meetings"],
     summary: "Завершить запись и поставить в обработку",
     request: { params: IdParam, body: { content: { "application/json": { schema: FinalizeBody } } } },
-    responses: { 200: { description: "OK", content: { "application/json": { schema: MeetingSummarySchema } } }, 409: { description: "Нет загруженного аудио", content: { "application/json": { schema: ErrorSchema } } } },
+    responses: {
+      200: { description: "OK", content: { "application/json": { schema: MeetingSummarySchema } } },
+      402: { description: "Запись длиннее лимита тарифа", content: { "application/json": { schema: QuotaErrorSchema } } },
+      409: { description: "Нет загруженного аудио", content: { "application/json": { schema: ErrorSchema } } },
+    },
   }),
   async (c) => {
     const a = await loadMeetingWithAccess(c.req.valid("param").id, c.get("user"));
@@ -413,6 +427,14 @@ meetingsRoutes.openapi(
     await d.update(meetings).set({ segmentCount: uploaded[0]?.n ?? 0 }).where(eq(meetings.id, a.meeting.id));
     const endedAt = body.endedAt ? new Date(body.endedAt) : new Date();
     const durationSec = body.durationSec ?? Math.max(0, Math.round((endedAt.getTime() - a.meeting.startedAt.getTime()) / 1000));
+    // Длительность: клиент останавливает запись на границе тарифа, сервер перепроверяет с допуском 10 %.
+    // Месячные часы здесь НЕ проверяем — начатая запись всегда дописывается (мягкий перерасход).
+    const { tier, limits } = await tierOf(a.meeting.ownerId, await orgScopeById(a.meeting.organizationId ?? c.get("org")?.id ?? null));
+    if (isOverDuration(durationSec, limits)) {
+      const err = durationQuotaError(a.meeting.ownerId, durationSec, tier, limits);
+      await d.update(meetings).set({ status: "failed", statusDetail: null, endedAt, durationSec, error: err.message }).where(eq(meetings.id, a.meeting.id));
+      throw err;
+    }
     const [m] = await d
       .update(meetings)
       .set({ status: "queued", statusDetail: "В очереди", error: null, endedAt, durationSec, ...(body.markers ? { markers: body.markers } : {}) })

@@ -26,6 +26,9 @@ function sttUploadMode(): "url" | "file" {
 }
 import { enqueueNotify } from "../queue/boss.js";
 import { syncReportActionItems, syncTasksFromReport } from "../tasks/service.js";
+import { tierOf } from "../billing/entitlement.js";
+import { orgScopeById } from "../billing/scope.js";
+import { durationErrorText, isOverDuration } from "../billing/quota.js";
 
 type Meeting = typeof meetings.$inferSelect;
 type Template = typeof meetingTemplates.$inferSelect;
@@ -311,6 +314,27 @@ async function summarizeStep(meeting: Meeting, template: Template, opts: { effor
   return version;
 }
 
+/**
+ * Тариф владельца встречи (в её пространстве): лимит длительности и модель отчёта.
+ * В воркере нет контекста запроса, поэтому организация загружается по meeting.organizationId.
+ */
+async function meetingTier(meeting: Meeting) {
+  return tierOf(meeting.ownerId, await orgScopeById(meeting.organizationId));
+}
+
+/**
+ * Длительность склеенного аудио против лимита тарифа (допуск 10 %). Записи проверены ещё на finalize,
+ * здесь ловим импорт: фактическую длительность даёт ffprobe уже после склейки.
+ */
+async function assertDurationStep(meeting: Meeting, durationSec: number | null) {
+  const sec = durationSec ?? meeting.durationSec;
+  if (!sec) return;
+  const { tier, limits } = await meetingTier(meeting);
+  if (!isOverDuration(sec, limits)) return;
+  track(meeting.ownerId, "quota_hit", { code: "quota.duration" });
+  throw new PipelineError(durationErrorText(Math.round(sec), tier, limits), false);
+}
+
 /** Полный пайплайн: merge → transcribe → purge → summarize → notify. */
 export async function processMeeting(job: ProcessMeetingJob): Promise<void> {
   const { meetingId } = job;
@@ -328,8 +352,9 @@ export async function processMeeting(job: ProcessMeetingJob): Promise<void> {
   try {
     const hasTranscript = (await db().select({ id: transcripts.id }).from(transcripts).where(eq(transcripts.meetingId, meetingId)).limit(1)).length > 0;
     if (!hasTranscript) {
-      const { key } = await mergeStep(meeting);
+      const { key, durationSec } = await mergeStep(meeting);
       const refreshed = (await loadMeeting(meetingId)).meeting;
+      await assertDurationStep(refreshed, durationSec);
       await transcribeStep(refreshed, key);
       await purgeAudio(meetingId);
     } else {
@@ -348,8 +373,11 @@ export async function processMeeting(job: ProcessMeetingJob): Promise<void> {
       await enqueueNotify({ meetingId, kind: "transcript_ready" });
       return;
     }
-    await summarizeStep(fresh.meeting, current, { effort: job.effort, model: job.model, createdBy: job.regenerate ? "regenerate" : "pipeline", instructions: job.instructions?.trim() || undefined });
-    track(fresh.meeting.ownerId, "report_ready", { template: current.code, regenerate: !!job.regenerate, model: job.model ?? "default" });
+    // Модель отчёта по тарифу: draft — ANTHROPIC_MODEL_DRAFT. Явный выбор в задании (черновик из приложения) важнее.
+    const { tier, limits } = await meetingTier(fresh.meeting);
+    const model = job.model ?? (limits.model === "draft" ? config().ANTHROPIC_MODEL_DRAFT : undefined);
+    await summarizeStep(fresh.meeting, current, { effort: job.effort, model, createdBy: job.regenerate ? "regenerate" : "pipeline", instructions: job.instructions?.trim() || undefined });
+    track(fresh.meeting.ownerId, "report_ready", { template: current.code, regenerate: !!job.regenerate, model: model ?? "default", tier });
     await enqueueNotify({ meetingId, kind: "report_ready" });
   } catch (e) {
     const err = e as Error;

@@ -64,6 +64,13 @@
       "when": 1790105105260,
       "tag": "0008_orphaned_from",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790106040466,
+      "tag": "0009_billing_subscriptions",
+      "breakpoints": true
     }
   ]
 }

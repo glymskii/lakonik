@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /**
  * Таблицы Better Auth (user / session / account / verification).
@@ -22,6 +22,11 @@ export const user = pgTable(
     role: text("role").default("member").notNull(), // member | agency_admin | holding_admin (устарело: доступ решают members)
     /** Владелец сервиса: админ-эндпоинты (планы организаций, статистика), но не содержимое встреч */
     isSuperadmin: boolean("is_superadmin").default(false).notNull(),
+    /**
+     * appAccountToken для StoreKit 2: Apple принимает только UUID, а id пользователя Better Auth — не UUID.
+     * Выдаётся при первом обращении к /api/billing/entitlement и связывает покупку с аккаунтом.
+     */
+    iapAccountToken: uuid("iap_account_token").unique(),
   },
   (t) => [index("user_agency_idx").on(t.agencyId)],
 );

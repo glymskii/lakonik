@@ -9,6 +9,7 @@ export const QUEUES = {
   stuckSweep: "meetings.stuck",
   notify: "meeting.notify",
   taskReminders: "tasks.remind",
+  subscriptionsSync: "billing.sync",
 } as const;
 
 export interface ProcessMeetingJob {
@@ -48,6 +49,7 @@ export async function getBoss(): Promise<PgBoss> {
   await b.createQueue(QUEUES.audioSweep, { retryLimit: 1, expireInSeconds: 60 * 10 });
   await b.createQueue(QUEUES.stuckSweep, { retryLimit: 1, expireInSeconds: 60 * 5 });
   await b.createQueue(QUEUES.taskReminders, { retryLimit: 1, expireInSeconds: 60 * 5 });
+  await b.createQueue(QUEUES.subscriptionsSync, { retryLimit: 1, expireInSeconds: 60 * 15 });
   boss = b;
   return b;
 }

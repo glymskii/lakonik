@@ -89,6 +89,8 @@ export const CreateMeetingBody = z
     platform: z.string().max(100).nullable().optional(),
     confidentiality: z.enum(["standard", "restricted"]).optional(),
     deviceId: z.string().max(100).optional(),
+    /** Онлайн-встреча (запись через трансляцию экрана) — доступна с тарифа Pro */
+    online: z.boolean().optional(),
   })
   .openapi("CreateMeetingBody");
 
@@ -371,6 +373,70 @@ export const MeSchema = z
   .openapi("Me");
 
 export const ActionItemsBody = z.object({ actionItems: z.array(ActionItemSchema) }).openapi("ActionItemsBody");
+
+// ---------- Тарифы и квоты ----------
+
+export const TierSchema = z.enum(["free", "starter", "pro", "unlimited", "enterprise"]).openapi("Tier");
+
+export const TierLimitsSchema = z
+  .object({
+    /** Максимальная длительность одной записи, секунды */
+    maxRecordingSec: z.number().int(),
+    /** Часы в месяц (секунды); null — без ограничения */
+    monthlyLimitSec: z.number().int().nullable(),
+    /** Записей в день; null — без ограничения */
+    dailyRecordings: z.number().int().nullable(),
+    onlineMeetings: z.boolean(),
+    /** draft — быстрая модель отчёта, full — основная */
+    model: z.enum(["draft", "full"]),
+  })
+  .openapi("TierLimits");
+
+export const SubscriptionSchema = z
+  .object({
+    productId: z.string(),
+    tier: z.enum(["starter", "pro", "unlimited"]),
+    expiresAt: z.string().nullable(),
+    autoRenew: z.boolean(),
+    status: z.enum(["active", "grace", "expired", "revoked"]),
+    environment: z.string(),
+  })
+  .openapi("Subscription");
+
+export const EntitlementSchema = z
+  .object({
+    tier: TierSchema,
+    /** free — без подписки, subscription — личная покупка, enterprise — план организации */
+    source: z.enum(["free", "subscription", "enterprise"]),
+    limits: TierLimitsSchema,
+    usage: z.object({
+      /** Записано секунд за календарный месяц (в enterprise — пул организации) */
+      monthlySec: z.number().int(),
+      dailyCount: z.number().int(),
+      monthResetsAt: z.string(),
+      dayResetsAt: z.string(),
+    }),
+    subscription: SubscriptionSchema.nullable(),
+    /** UUID для StoreKit: приложение передаёт его в purchase(options: [.appAccountToken(…)]) */
+    appAccountToken: z.string().uuid(),
+  })
+  .openapi("Entitlement");
+
+export const QuotaErrorSchema = z
+  .object({
+    error: z.string(),
+    code: z.enum(["quota.daily", "quota.duration", "quota.monthly", "feature.online_meetings"]),
+    limit: z.number().int().nullable(),
+    used: z.number().int().nullable(),
+    resetsAt: z.string().nullable(),
+  })
+  .openapi("QuotaError");
+
+export const AppleTransactionBody = z
+  .object({ jws: z.string().min(20).openapi({ description: "Transaction.jwsRepresentation из StoreKit 2" }) })
+  .openapi("AppleTransactionBody");
+
+export const AppleNotificationBody = z.object({ signedPayload: z.string().min(20) }).openapi("AppleNotificationBody");
 
 export const AccountUserSchema = z
   .object({ id: z.string(), name: z.string(), email: z.string(), agencyId: z.string().nullable(), agencyName: z.string().nullable() })

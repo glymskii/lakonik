@@ -7,6 +7,7 @@ import { sweepAudio, sweepStuck } from "../pipeline/sweeps.js";
 import { notifyMeeting, sendTaskReminders } from "../push/apns.js";
 import { flushSentry, initSentry } from "../observability/sentry.js";
 import { flush as flushAnalytics } from "../analytics/amplitude.js";
+import { syncStaleSubscriptions } from "../billing/apple.js";
 
 process.env.SERVICE_NAME ??= "worker";
 
@@ -42,11 +43,16 @@ async function main() {
     await sendTaskReminders();
   });
 
+  await boss.work(QUEUES.subscriptionsSync, { batchSize: 1, pollingIntervalSeconds: 60 }, async () => {
+    await syncStaleSubscriptions();
+  });
+
   await boss.schedule(QUEUES.taskReminders, "5 * * * *"); // каждый час; отправка только в remindHourLocal по Алматы
   await boss.schedule(QUEUES.audioSweep, "15 * * * *"); // каждый час
   await boss.schedule(QUEUES.stuckSweep, "*/10 * * * *"); // каждые 10 минут
+  await boss.schedule(QUEUES.subscriptionsSync, "40 3 * * *"); // раз в сутки: подписки без уведомлений дольше 24 ч
 
-  logger.info("Worker запущен: очереди meeting.process, notify, sweeps");
+  logger.info("Worker запущен: очереди meeting.process, notify, sweeps, billing.sync");
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "Останавливаю worker…");
