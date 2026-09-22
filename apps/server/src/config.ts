@@ -86,6 +86,18 @@ const schema = z.object({
   LEGACY_ORG_SEATS: z.coerce.number().int().positive().optional(),
   /** Дата окончания плана YYYY-MM-DD (конец дня по Алматы) */
   LEGACY_ORG_UNTIL: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** ---- Интеграции Meet/Zoom (раздел 10 docs/lakonik-1.0.md) ---- */
+  /** OAuth-клиент Google Cloud для Meet REST API и Drive (отдельный от входа в приложение) */
+  GOOGLE_INTEGRATION_CLIENT_ID: z.string().optional(),
+  GOOGLE_INTEGRATION_CLIENT_SECRET: z.string().optional(),
+  /** Приложение Zoom Marketplace (user-managed) */
+  ZOOM_CLIENT_ID: z.string().optional(),
+  ZOOM_CLIENT_SECRET: z.string().optional(),
+  ZOOM_WEBHOOK_SECRET: z.string().optional(),
+  /** Ключ шифрования токенов интеграций: 32 байта в hex или base64. Без него подключение недоступно */
+  INTEGRATIONS_KEY: z.string().optional(),
+  /** Как часто опрашивать провайдеров (минуты, 1–59) */
+  INTEGRATIONS_SYNC_MINUTES: z.coerce.number().int().min(1).max(59).default(10),
   SENTRY_DSN: z.string().optional(),
   AMPLITUDE_API_KEY: z.string().optional(),
 });

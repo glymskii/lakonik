@@ -8,6 +8,7 @@ import { config } from "../config.js";
 import { logger } from "../logger.js";
 import type { AppEnv } from "./middleware/auth.js";
 import { billingRoutes } from "./routes/billing.js";
+import { integrationsRoutes } from "./routes/integrations.js";
 import { meetingsRoutes } from "./routes/meetings.js";
 import { meRoutes, usersRoutes } from "./routes/me.js";
 import { templatesRoutes } from "./routes/templates.js";
@@ -53,6 +54,7 @@ export function createApp() {
   app.route("/api/people", peopleRoutes);
   app.route("/api/settings", settingsRoutes);
   app.route("/api/billing", billingRoutes);
+  app.route("/api/integrations", integrationsRoutes);
   app.route("/api/me", meRoutes);
   app.route("/api/users", usersRoutes);
 

@@ -1,0 +1,22 @@
+{
+  "participants": [
+    {
+      "name": "conferenceRecords/abc-123/participants/p1",
+      "signedinUser": { "user": "users/108", "displayName": "Асель Нурланова" },
+      "earliestStartTime": "2026-09-22T09:00:01.000Z",
+      "latestEndTime": "2026-09-22T10:02:10.000Z"
+    },
+    {
+      "name": "conferenceRecords/abc-123/participants/p2",
+      "anonymousUser": { "displayName": "Гость" }
+    },
+    {
+      "name": "conferenceRecords/abc-123/participants/p3",
+      "phoneUser": { "displayName": "+7 701 000 00 00" }
+    },
+    {
+      "name": "conferenceRecords/abc-123/participants/p4",
+      "signedinUser": { "user": "users/109", "displayName": "Асель Нурланова" }
+    }
+  ]
+}

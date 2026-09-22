@@ -1,0 +1,24 @@
+{
+  "recordings": [
+    {
+      "name": "conferenceRecords/abc-123/recordings/rec-1",
+      "driveDestination": {
+        "file": "1AbCdEfGhIjKlMnOpQrStUvWxYz",
+        "exportUri": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/view?usp=drivesdk"
+      },
+      "state": "FILE_GENERATED",
+      "startTime": "2026-09-22T09:00:12.000Z",
+      "endTime": "2026-09-22T10:02:20.000Z"
+    },
+    {
+      "name": "conferenceRecords/abc-123/recordings/rec-2",
+      "state": "STARTED",
+      "startTime": "2026-09-22T10:05:00.000Z"
+    },
+    {
+      "name": "conferenceRecords/abc-123/recordings/rec-3",
+      "driveDestination": {},
+      "state": "FILE_GENERATED"
+    }
+  ]
+}

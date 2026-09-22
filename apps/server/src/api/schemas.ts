@@ -533,3 +533,21 @@ export const DeadlineSettingsSchema = z
   .openapi("DeadlineSettings");
 
 export const DeadlineSettingsPatch = DeadlineSettingsSchema.partial().openapi("DeadlineSettingsPatch");
+
+// ---------- Интеграции Meet/Zoom ----------
+
+export const IntegrationSchema = z
+  .object({
+    provider: z.enum(["google_meet", "zoom"]),
+    accountEmail: z.string().nullable(),
+    autoImport: z.boolean(),
+    lastSyncAt: z.string().nullable(),
+    lastError: z.string().nullable(),
+    status: z.enum(["active", "error", "revoked"]),
+    scopes: z.array(z.string()),
+  })
+  .openapi("Integration");
+
+export const IntegrationPatchBody = z.object({ autoImport: z.boolean().optional() }).openapi("IntegrationPatchBody");
+
+export const IntegrationConnectSchema = z.object({ authUrl: z.string() }).openapi("IntegrationConnect");

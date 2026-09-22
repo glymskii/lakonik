@@ -9,6 +9,7 @@ export type AnalyticsEvent =
   | "signup" | "login" | "recording_started" | "recording_finished" | "file_imported" | "transcript_ready" | "report_ready"
   | "report_regenerated" | "speakers_confirmed" | "meeting_shared" | "task_done" | "meeting_deleted" | "account_deleted"
   | "organization_created" | "invite_accepted" | "workspace_selected"
+  | "integration_connected" | "integration_import" | "integration_import_skipped"
   | "subscription_started" | "subscription_renewed" | "subscription_cancelled" | "quota_hit";
 
 type Props = Record<string, string | number | boolean | null | undefined>;

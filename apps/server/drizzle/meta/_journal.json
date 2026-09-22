@@ -71,6 +71,13 @@
       "when": 1790106040466,
       "tag": "0009_billing_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790106997954,
+      "tag": "0010_integrations",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,52 @@
+{
+  "event": "recording.completed",
+  "event_ts": 1790000000000,
+  "download_token": "eyJhbGciOiJIUzUxMiJ9.download-token",
+  "payload": {
+    "account_id": "acc-42",
+    "object": {
+      "uuid": "aBcDeF/gHiJ==",
+      "id": 81234567890,
+      "host_id": "host-42",
+      "host_email": "Asel@advgroup.kz",
+      "topic": "Статус по кампании",
+      "start_time": "2026-09-22T09:00:00Z",
+      "duration": 62,
+      "recording_files": [
+        {
+          "id": "file-mp4",
+          "meeting_id": "aBcDeF/gHiJ==",
+          "file_type": "MP4",
+          "file_extension": "MP4",
+          "recording_type": "shared_screen_with_speaker_view",
+          "status": "completed",
+          "download_url": "https://zoom.us/rec/download/mp4",
+          "file_size": 912345678,
+          "recording_start": "2026-09-22T09:00:05Z",
+          "recording_end": "2026-09-22T10:02:00Z"
+        },
+        {
+          "id": "file-m4a",
+          "meeting_id": "aBcDeF/gHiJ==",
+          "file_type": "M4A",
+          "file_extension": "M4A",
+          "recording_type": "audio_only",
+          "status": "completed",
+          "download_url": "https://zoom.us/rec/download/m4a",
+          "file_size": 30123456,
+          "recording_start": "2026-09-22T09:00:05Z",
+          "recording_end": "2026-09-22T10:02:00Z"
+        },
+        {
+          "id": "file-vtt",
+          "file_type": "TRANSCRIPT",
+          "file_extension": "VTT",
+          "recording_type": "audio_transcript",
+          "status": "completed",
+          "download_url": "https://zoom.us/rec/download/vtt",
+          "file_size": 21000
+        }
+      ]
+    }
+  }
+}

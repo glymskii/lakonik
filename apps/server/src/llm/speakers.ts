@@ -63,6 +63,9 @@ function anthropic(): Anthropic {
   return client;
 }
 
+/** Ключ contextFields с транскриптом Google Meet (кладёт авто-импорт, см. src/integrations/sync.ts) */
+export const MEET_TRANSCRIPT_FIELD = "meetTranscript";
+
 /** Компактная расшифровка со статистикой по спикерам; очень длинные транскрипты режем (для анализа хватает начала и середины) */
 export function formatTranscriptForSpeakers(segments: TranscriptSegment[], maxChars = 60_000): string {
   const counts = new Map<string, number>();
@@ -84,9 +87,14 @@ export function buildSpeakersPrompt(m: Meeting, tr: Transcript): string {
     parts.push("УЧАСТНИКИ ПО ДАННЫМ ПОЛЬЗОВАТЕЛЯ (имя · роль · компания):\n" + m.participantsHint.map((p) => `- ${[p.name, p.role, p.company].filter(Boolean).join(" · ")}${p.side ? ` (${p.side})` : ""}`).join("\n"));
   }
   const ctx = Object.entries(m.contextFields)
-    .filter(([, v]) => v != null && v !== "" && !(Array.isArray(v) && v.length === 0))
+    .filter(([k, v]) => k !== MEET_TRANSCRIPT_FIELD && v != null && v !== "" && !(Array.isArray(v) && v.length === 0))
     .map(([k, v]) => `- ${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`);
   if (ctx.length) parts.push("КОНТЕКСТ ВСТРЕЧИ:\n" + ctx.join("\n"));
+  // Транскрипт платформы (Google Meet) — готовое соответствие «имя ↔ реплика», сильная подсказка по спикерам
+  const meet = m.contextFields[MEET_TRANSCRIPT_FIELD];
+  if (typeof meet === "string" && meet.trim()) {
+    parts.push(`ТРАНСКРИПТ ПЛАТФОРМЫ С ИМЕНАМИ (может расходиться с нашей расшифровкой по времени и словам, но имена в нём настоящие):\n${meet}`);
+  }
   if (m.numSpeakersHint) parts.push(`Пользователь ожидал говорящих: ${m.numSpeakersHint}.`);
   parts.push(formatTranscriptForSpeakers(tr.segments));
   return parts.join("\n\n");

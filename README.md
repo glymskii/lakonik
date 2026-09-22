@@ -171,6 +171,7 @@ pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts user tie
 - `POST /api/meetings` (без `templateId` — быстрая запись, тип задаётся позже через `PATCH … { templateId }`), `GET /api/meetings`, `GET/PATCH/DELETE /api/meetings/:id`, `POST /api/meetings/:id/segments` → presigned PUT, `POST …/segments/:seq/complete`, `POST /api/meetings/:id/finalize`, `POST …/retry`, `GET …/events` (SSE).
 - `PATCH /api/meetings/:id/speakers` (имена, роли, владелец, `merges` для слияния дублей, `confirmed`), `POST /api/meetings/:id/reports` (первый отчёт из статуса `transcribed`, пересборка / ИИ-правка с `instructions`), `PATCH /api/meetings/:id/reports/:reportId` (ручная правка текста), `GET …/export?format=docx|pdf|md|txt`, `GET/POST/DELETE …/shares`.
 - `GET /api/tasks`, `PATCH/DELETE /api/tasks/:id`, `GET/POST /api/meetings/:id/tasks`, `GET/POST/PATCH/DELETE /api/people`, `GET/PUT /api/settings/deadlines`.
+- `GET /api/integrations` (подключённые Meet/Zoom), `GET /api/integrations/{provider}/connect` → `{ authUrl }`, `GET /api/integrations/{provider}/callback` (публичный, возвращает в приложение по `lakonik://`), `PATCH /api/integrations/{provider}` (`{ autoImport }`), `DELETE /api/integrations/{provider}`, `POST /api/integrations/{provider}/sync`, `POST /api/integrations/zoom/webhook` (публичный, доверие по подписи Zoom). `provider` — `google_meet` или `zoom`.
 - `GET /api/billing/entitlement` (тариф, лимиты, расход за день и месяц, `appAccountToken` для StoreKit), `POST /api/billing/apple/transactions` (подписанная транзакция StoreKit 2 после покупки или восстановления), `POST /api/billing/apple/notifications` (App Store Server Notifications v2, без авторизации — доверие по подписи).
 - `DELETE /api/me` — удаление аккаунта: личное пространство и организации, где пользователь был один, удаляются; из остальных он выходит, а его встречи переходят владельцу организации (конфиденциальные удаляются); токен Sign in with Apple отзывается. Если пользователь — единственный владелец организации с другими участниками, ответ 409 `account.sole_owner` со списком таких организаций.
 
@@ -179,6 +180,28 @@ pnpm --filter @lakonik/server exec tsx --env-file=.env scripts/admin.ts user tie
 ### Тарифы и квоты
 
 Лимиты уровней — в `src/billing/tiers.ts` (таблица тарифов — раздел 8 `docs/lakonik-1.0.md`). Уровень пользователя = максимальная активная подписка; в организации с планом `enterprise` все участники получают Enterprise, а часы идут в общий пул (20 ч × мест). Нарушение квоты — HTTP 402 с телом `{error, code, limit, used, resetsAt}`, где `code` — `quota.daily` | `quota.duration` | `quota.monthly` | `feature.online_meetings`; клиент показывает по нему экран тарифа. Месячные часы проверяются при создании встречи, но не при `finalize`: начатая запись всегда дописывается. Длительность сверх лимита тарифа (допуск 10 %) переводит встречу в `failed` — при `finalize` для записей и после склейки аудио для импорта.
+
+### Интеграции Meet/Zoom
+
+Штатные записи Google Meet и Zoom попадают в приложение сами (раздел 10 `docs/lakonik-1.0.md`): раз в `INTEGRATIONS_SYNC_MINUTES` минут воркер опрашивает подключённые аккаунты (очередь `integrations.sync`), скачивает запись, вынимает звук (`ffmpeg -vn`, 48 kbps / 16 кГц / моно) и отдаёт её обычному пайплайну импорта — `source = imported`, `platform = Google Meet | Zoom`, тип встречи пользователь выбирает после расшифровки. Дедупликация — уникальный `meetings.external_ref` (`google_meet:<recording name>`, `zoom:<uuid>:<file id>`). Часы тратятся по тарифу владельца интеграции (или из пула организации): при исчерпании квоты встреча не создаётся, в карточке интеграции появляется причина, владельцу уходит push, а на следующем прогоне импорт повторяется.
+
+Переменные окружения (`apps/server/.env.example`):
+
+| Переменная | Зачем |
+| --- | --- |
+| `INTEGRATIONS_KEY` | шифрование refresh-токенов (AES-256-GCM), 32 байта: `openssl rand -hex 32`. Без ключа подключение отвечает 503 |
+| `GOOGLE_INTEGRATION_CLIENT_ID` / `_SECRET` | OAuth-клиент Google Cloud для Meet API и Drive (отдельный от входа в приложение) |
+| `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` | приложение Zoom Marketplace (user-managed) |
+| `ZOOM_WEBHOOK_SECRET` | Secret Token приложения Zoom: проверка `x-zm-signature` и ответ на `endpoint.url_validation` |
+| `INTEGRATIONS_SYNC_MINUTES` | период опроса, 1–59 (по умолчанию 10) |
+
+Без ключей провайдера `/connect` отвечает 503 «Интеграция с … пока не настроена на этом сервере», остальной сервис работает как обычно.
+
+**Google Cloud** (проект с включёнными Google Meet API и Google Drive API): OAuth consent screen — External, scopes `openid`, `email`, `https://www.googleapis.com/auth/meetings.space.readonly`, `https://www.googleapis.com/auth/drive.meet.readonly` (sensitive — нужна верификация, 2–6 недель; до неё работает с предупреждением и лимитом 100 пользователей). Credentials → OAuth client ID → Web application, Authorized redirect URI: `https://api.lakonik.app/api/integrations/google_meet/callback` (локально — `http://localhost:3000/...`, значение берётся из `BASE_URL`). Для Workspace-организации админ добавляет client ID в доверенные: Admin console → Security → API controls → App access control. Запись включает хост (план Workspace Business Standard и выше).
+
+**Zoom Marketplace** → Build App → General App, user-managed: Redirect URL for OAuth `https://api.lakonik.app/api/integrations/zoom/callback` (и он же в OAuth Allow List), scopes `recording:read`, `user:read`, `meeting:read`. Feature → Event Subscriptions: endpoint `https://api.lakonik.app/api/integrations/zoom/webhook`, событие `recording.completed`, Secret Token → `ZOOM_WEBHOOK_SECRET`. Кнопка Validate вызывает `endpoint.url_validation` — сервер отвечает на неё сам. Вебхук только ставит задачу в очередь (Zoom ждёт ответ несколько секунд), запись скачивается в фоне; пропущенные события подбирает опрос `users/me/recordings`. Для пользователей вне аккаунта владельца приложение проходит ревью Marketplace.
+
+Возврат в приложение после OAuth — по схеме `lakonik://integrations/callback?provider=<google_meet|zoom>&status=ok` (при ошибке `status=error&message=<текст>`); схему регистрирует iOS-клиент, сервер только отдаёт 302.
 
 Проверку подписей Apple обеспечивают корневые сертификаты в `apps/server/assets/apple/*.cer` (в образ копируются вместе с `assets`). Обновить:
 
@@ -191,7 +214,7 @@ curl -o apps/server/assets/apple/AppleRootCA-G3.cer https://www.apple.com/certif
 ## Тесты
 
 ```bash
-pnpm --filter @lakonik/server test        # vitest: сегментация STT, рендер отчётов, промпт, сроки задач, тарифы и квоты
+pnpm --filter @lakonik/server test        # vitest: сегментация STT, рендер отчётов, промпт, сроки задач, тарифы и квоты, интеграции Meet/Zoom
 pnpm --filter @lakonik/server typecheck
 ```
 

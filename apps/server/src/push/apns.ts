@@ -120,13 +120,31 @@ async function sendApnsTo(env: "production" | "sandbox", deviceToken: string, pa
   }
 }
 
-/** Уведомление владельца встречи о готовности отчёта / ошибке. */
+/** Отправка одного уведомления на все устройства пользователя (битые токены удаляются). */
+async function sendToUser(userId: string, payload: PushPayload, ctx: Record<string, unknown> = {}): Promise<void> {
+  const d = db();
+  const userDevices = await d.select().from(devices).where(eq(devices.userId, userId));
+  for (const dev of userDevices) {
+    if (dev.platform !== "ios") continue;
+    const res = await sendApns(dev.pushToken, payload);
+    if (res === "invalid_token") await d.delete(devices).where(eq(devices.id, dev.id));
+    if (res === "disabled") {
+      logger.info({ ...ctx }, "APNs не настроен — push пропущен");
+      return;
+    }
+    logger.info({ ...ctx, result: res, env: tokenEnv.get(dev.pushToken) ?? null, token: dev.pushToken.slice(0, 8) }, "Push отправлен");
+  }
+}
+
+/** Уведомление владельца встречи о готовности отчёта / ошибке, а также о пропущенном импорте из Meet/Zoom. */
 export async function notifyMeeting(job: NotifyJob): Promise<void> {
   const d = db();
+  if (job.kind === "import_skipped") {
+    await sendToUser(job.userId, { title: "Запись не импортирована", body: job.text, data: { kind: "import_skipped" }, threadId: "integrations" }, { kind: job.kind });
+    return;
+  }
   const [m] = await d.select().from(meetings).where(eq(meetings.id, job.meetingId)).limit(1);
   if (!m) return;
-  const userDevices = await d.select().from(devices).where(eq(devices.userId, m.ownerId));
-  if (userDevices.length === 0) return;
 
   let payload: PushPayload;
   if (job.kind === "report_ready") {
@@ -138,16 +156,7 @@ export async function notifyMeeting(job: NotifyJob): Promise<void> {
     payload = { title: "Не удалось обработать запись", body: m.error ?? m.title, data: { meetingId: m.id, kind: "failed" }, threadId: m.id };
   }
 
-  for (const dev of userDevices) {
-    if (dev.platform !== "ios") continue;
-    const res = await sendApns(dev.pushToken, payload);
-    if (res === "invalid_token") await d.delete(devices).where(eq(devices.id, dev.id));
-    if (res === "disabled") {
-      logger.info({ meetingId: m.id, kind: job.kind }, "APNs не настроен — push пропущен");
-      return;
-    }
-    logger.info({ meetingId: m.id, kind: job.kind, result: res, env: tokenEnv.get(dev.pushToken) ?? null, token: dev.pushToken.slice(0, 8) }, "Push отправлен");
-  }
+  await sendToUser(m.ownerId, payload, { meetingId: m.id, kind: job.kind });
 }
 
 

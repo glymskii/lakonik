@@ -1,0 +1,10 @@
+{
+  "page_count": 1,
+  "total_records": 3,
+  "participants": [
+    { "id": "u1", "name": "Асель Нурланова", "user_email": "asel@advgroup.kz" },
+    { "id": "u2", "name": "Дмитрий Ким", "user_email": "dk@client.kz" },
+    { "id": "u3", "name": "Асель Нурланова", "user_email": "asel@advgroup.kz" },
+    { "id": "u4", "name": "", "user_email": "" }
+  ]
+}

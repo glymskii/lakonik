@@ -39,6 +39,13 @@ export async function concatToM4a(inputs: string[], output: string): Promise<voi
   await exec("ffmpeg", args, { maxBuffer: 16 * 1024 * 1024 });
 }
 
+/** Звуковая дорожка из видео-записи (mp4 из Meet) в тот же формат, что и записи с телефона. */
+export async function extractAudioToM4a(input: string, output: string): Promise<void> {
+  await exec("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-i", input, "-vn", "-c:a", "aac", "-b:a", "48k", "-ar", "16000", "-ac", "1", "-movflags", "+faststart", output], {
+    maxBuffer: 16 * 1024 * 1024,
+  });
+}
+
 export async function writeTemp(dir: string, name: string, data: Buffer): Promise<string> {
   const p = join(dir, name);
   await writeFile(p, data);

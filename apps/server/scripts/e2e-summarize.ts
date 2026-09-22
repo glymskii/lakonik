@@ -40,6 +40,7 @@ const meeting = {
   numSpeakersHint: 3,
   languageHint: "ru",
   platform: "Zoom",
+  externalRef: null,
   markers: [],
   segmentCount: 1,
   deviceId: null,

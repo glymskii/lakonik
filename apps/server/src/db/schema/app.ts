@@ -138,6 +138,8 @@ export const meetings = pgTable(
     numSpeakersHint: integer("num_speakers_hint"),
     languageHint: text("language_hint"), // ru | kk | en | null (auto)
     platform: text("platform"),
+    /** Запись платформы, из которой импортирована встреча: google_meet:<recording> / zoom:<uuid>:<file id> */
+    externalRef: text("external_ref"),
     markers: jsonb("markers").$type<Marker[]>().notNull().default([]),
     segmentCount: integer("segment_count").notNull().default(0),
     deviceId: text("device_id"),
@@ -148,6 +150,8 @@ export const meetings = pgTable(
     index("meetings_agency_idx").on(t.agencyId, t.createdAt),
     index("meetings_org_idx").on(t.organizationId, t.createdAt),
     index("meetings_status_idx").on(t.status),
+    // Дедупликация авто-импорта из Meet/Zoom (NULL не мешает: их в уникальном индексе может быть много)
+    uniqueIndex("meetings_external_ref_idx").on(t.externalRef),
   ],
 );
 

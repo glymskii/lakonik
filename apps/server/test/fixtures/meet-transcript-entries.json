@@ -1,0 +1,26 @@
+{
+  "transcriptEntries": [
+    {
+      "name": "conferenceRecords/abc-123/transcripts/t1/entries/e1",
+      "participant": "conferenceRecords/abc-123/participants/p1",
+      "text": "Давайте начнём с бюджета кампании.",
+      "languageCode": "ru-RU",
+      "startTime": "2026-09-22T09:00:05.000Z",
+      "endTime": "2026-09-22T09:00:09.000Z"
+    },
+    {
+      "name": "conferenceRecords/abc-123/transcripts/t1/entries/e2",
+      "participant": "conferenceRecords/abc-123/participants/p2",
+      "text": "Смета выросла на двенадцать процентов.",
+      "languageCode": "ru-RU",
+      "startTime": "2026-09-22T09:01:10.000Z",
+      "endTime": "2026-09-22T09:01:14.000Z"
+    },
+    {
+      "name": "conferenceRecords/abc-123/transcripts/t1/entries/e3",
+      "participant": "conferenceRecords/abc-123/participants/p7",
+      "text": "",
+      "startTime": "2026-09-22T09:02:00.000Z"
+    }
+  ]
+}

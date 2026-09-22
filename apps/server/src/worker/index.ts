@@ -1,13 +1,14 @@
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import { closeDb } from "../db/client.js";
-import { getBoss, QUEUES, stopBoss, type NotifyJob, type ProcessMeetingJob } from "../queue/boss.js";
+import { getBoss, QUEUES, stopBoss, type IntegrationsSyncJob, type NotifyJob, type ProcessMeetingJob } from "../queue/boss.js";
 import { markFailedFromDlq, processMeeting } from "../pipeline/process-meeting.js";
 import { sweepAudio, sweepStuck } from "../pipeline/sweeps.js";
 import { notifyMeeting, sendTaskReminders } from "../push/apns.js";
 import { flushSentry, initSentry } from "../observability/sentry.js";
 import { flush as flushAnalytics } from "../analytics/amplitude.js";
 import { syncStaleSubscriptions } from "../billing/apple.js";
+import { integrationsCron, runIntegrationsSync } from "../integrations/sync.js";
 
 process.env.SERVICE_NAME ??= "worker";
 
@@ -47,12 +48,18 @@ async function main() {
     await syncStaleSubscriptions();
   });
 
+  await boss.work<IntegrationsSyncJob>(QUEUES.integrationsSync, { batchSize: 1, pollingIntervalSeconds: 10 }, async ([job]) => {
+    if (!job) return;
+    await runIntegrationsSync(job.data ?? {});
+  });
+
   await boss.schedule(QUEUES.taskReminders, "5 * * * *"); // каждый час; отправка только в remindHourLocal по Алматы
   await boss.schedule(QUEUES.audioSweep, "15 * * * *"); // каждый час
   await boss.schedule(QUEUES.stuckSweep, "*/10 * * * *"); // каждые 10 минут
   await boss.schedule(QUEUES.subscriptionsSync, "40 3 * * *"); // раз в сутки: подписки без уведомлений дольше 24 ч
+  await boss.schedule(QUEUES.integrationsSync, integrationsCron()); // опрос записей Meet/Zoom
 
-  logger.info("Worker запущен: очереди meeting.process, notify, sweeps, billing.sync");
+  logger.info("Worker запущен: очереди meeting.process, notify, sweeps, billing.sync, integrations.sync");
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "Останавливаю worker…");
