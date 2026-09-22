@@ -585,6 +585,14 @@ struct ShareBody: Encodable { let email: String; var scope: String = "report" }
 struct Share: Decodable, Identifiable { let id: String; let recipientEmail: String; let scope: String; let createdAt: Date }
 struct DeviceBody: Encodable { let platform: String; let pushToken: String; let appVersion: String? }
 
+/// Корпоративный сервер организации (справочник по коду для входа сотрудника)
+struct OrgServer: Codable, Hashable {
+    let code: String
+    let name: String
+    let apiBaseUrl: String
+    let hint: String?
+}
+
 struct Me: Codable, Hashable {
     let id: String
     let email: String

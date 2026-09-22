@@ -51,6 +51,7 @@ final class AuthService {
 
     func signOutLocally() {
         Keychain.shared.token = nil
+        AppConfig.clearOrg() // при выходе забываем корпоративный сервер: следующий вход снова спросит код организации
         me = nil
         isSignedIn = false
     }

@@ -143,6 +143,18 @@ extension APIClient {
     func me() async throws -> Me { try await request("GET", "/api/me") }
     func registerDevice(_ body: DeviceBody) async throws { try await raw("POST", "/api/me/devices", body: body) }
 
+    /// Адрес сервера организации по коду. Идёт в справочник (сервер по умолчанию) — до того, как выбран корпоративный сервер.
+    func orgServer(code: String) async throws -> OrgServer {
+        let trimmed = code.trimmingCharacters(in: .whitespaces).uppercased()
+        var req = URLRequest(url: AppConfig.discoveryBaseURL.appending(path: "/api/org-servers/\(trimmed)"))
+        req.timeoutInterval = 20
+        let (data, response) = try await session.data(for: req)
+        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if code == 404 { throw APIError.server(status: 404, message: "Организация с таким кодом не найдена. Проверьте код у администратора.") }
+        guard (200..<300).contains(code) else { throw APIError.server(status: code, message: "Справочник организаций недоступен (\(code))") }
+        return try decoder.decode(OrgServer.self, from: data)
+    }
+
     func templates() async throws -> TemplatesResponse { try await request("GET", "/api/templates") }
 
     func meetings(query: String? = nil, limit: Int = 50, offset: Int = 0) async throws -> MeetingsPage {

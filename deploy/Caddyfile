@@ -1,0 +1,17 @@
+# TLS-сертификат Let's Encrypt выпускается автоматически при первом запуске (нужны открытые 80 и 443).
+# Свой корпоративный сертификат: замените блок на `tls /etc/caddy/cert.pem /etc/caddy/key.pem` и примонтируйте файлы.
+{$LAKONIK_DOMAIN} {
+	encode gzip
+	request_body {
+		max_size 2GB
+	}
+	reverse_proxy api:3000 {
+		flush_interval -1   # SSE: прогресс обработки встречи отдаётся потоком
+	}
+	log {
+		output file /data/access.log {
+			roll_size 50MiB
+			roll_keep 10
+		}
+	}
+}

@@ -11,9 +11,14 @@ struct SignInView: View {
     @State private var busy = false
     @State private var error: String?
     @State private var appleNonce: String?
+    @State private var mode: Mode = AppConfig.selectedOrg == nil ? .personal : .corporate
+    @State private var orgCode = ""
+    @State private var org: (code: String, name: String)? = AppConfig.selectedOrg
+    @State private var orgHint: String?
     @FocusState private var focus: Field?
 
-    enum Field { case email, code }
+    enum Field { case email, code, org }
+    enum Mode: String, CaseIterable { case personal, corporate }
 
     var body: some View {
         NavigationStack {
@@ -28,8 +33,60 @@ struct SignInView: View {
                         .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
 
+                Picker("", selection: $mode) {
+                    Text("Личный").tag(Mode.personal)
+                    Text("Корпоративный").tag(Mode.corporate)
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: mode) { _, m in
+                    codeSent = false; code = ""; error = nil
+                    if m == .personal { clearOrg() } else { focus = org == nil ? .org : .email }
+                }
+
+                if mode == .corporate, org == nil {
+                    VStack(spacing: 12) {
+                        TextField("Код организации (например ADV)", text: $orgCode)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .focused($focus, equals: .org)
+                            .padding(14)
+                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                            .onSubmit { Task { await resolveOrg() } }
+                        Button {
+                            Task { await resolveOrg() }
+                        } label: {
+                            HStack {
+                                if busy { ProgressView().tint(.white) }
+                                Text("Продолжить")
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 6)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(busy || orgCode.trimmingCharacters(in: .whitespaces).count < 2)
+                        Text("Код выдаёт администратор вашей компании. Данные компании хранятся на её сервере — приложение подключится к нему.")
+                            .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    }
+                    if let error {
+                        Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+                    }
+                    Spacer()
+                } else {
+                if let org {
+                    HStack(spacing: 8) {
+                        Image(systemName: "building.2.fill").foregroundStyle(.tint)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(org.name).font(.subheadline.weight(.semibold))
+                            Text(orgHint ?? "Сервер компании").font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Сменить") { clearOrg(); focus = .org }.font(.footnote)
+                    }
+                    .padding(12)
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                }
+
                 VStack(spacing: 12) {
-                    TextField("Корпоративная почта", text: $email)
+                    TextField(mode == .corporate ? "Рабочая почта" : "Почта", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
@@ -88,9 +145,10 @@ struct SignInView: View {
                 .frame(height: 48)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text("Введите рабочую почту — код для входа придёт письмом.")
+                Text(mode == .corporate ? "Код для входа придёт на вашу рабочую почту." : "Введите почту — код для входа придёт письмом.")
                     .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 Spacer()
+                }
             }
             .padding(24)
             .onAppear { focus = .email }
@@ -100,6 +158,25 @@ struct SignInView: View {
     private var isValidEmail: Bool {
         let e = email.trimmingCharacters(in: .whitespaces)
         return e.contains("@") && e.contains(".") && e.count > 5
+    }
+
+    /// Код организации → адрес её сервера. Запрос уходит в справочник, дальше приложение работает только с сервером компании.
+    private func resolveOrg() async {
+        busy = true; error = nil
+        defer { busy = false }
+        do {
+            let s = try await APIClient.shared.orgServer(code: orgCode)
+            AppConfig.selectOrg(code: s.code, name: s.name, apiBaseUrl: s.apiBaseUrl)
+            org = (s.code, s.name)
+            orgHint = s.hint
+            orgCode = ""
+            focus = .email
+        } catch { self.error = error.localizedDescription }
+    }
+
+    private func clearOrg() {
+        AppConfig.clearOrg()
+        org = nil; orgHint = nil; email = ""; codeSent = false; code = ""
     }
 
     private func sendCode() async {

@@ -10,6 +10,7 @@ import type { AppEnv } from "./middleware/auth.js";
 import { meetingsRoutes } from "./routes/meetings.js";
 import { meRoutes, usersRoutes } from "./routes/me.js";
 import { templatesRoutes } from "./routes/templates.js";
+import { orgServersRoutes } from "./routes/org-servers.js";
 import { meetingTasksRoutes, tasksRoutes } from "./routes/tasks.js";
 import { peopleRoutes } from "./routes/people.js";
 import { settingsRoutes } from "./routes/settings.js";
@@ -40,6 +41,7 @@ export function createApp() {
   // Better Auth: /api/auth/*
   app.on(["GET", "POST"], "/api/auth/*", (c) => auth().handler(c.req.raw));
 
+  app.route("/api/org-servers", orgServersRoutes);
   app.route("/api/templates", templatesRoutes);
   app.route("/api/meetings", meetingTasksRoutes);
   app.route("/api/meetings", meetingsRoutes);
