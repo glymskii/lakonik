@@ -21,6 +21,9 @@
 
 ## 2. Установка
 
+Проверено: комплект разворачивается «как есть» — миграции применяются, 12 шаблонов отчётов засеиваются,
+API отвечает через HTTPS, обработчик и хранилище стартуют (прогон 22.09.2026).
+
 ```bash
 sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
 sudo usermod -aG docker $USER && newgrp docker
@@ -41,7 +44,7 @@ openssl rand -hex 32   # BETTER_AUTH_SECRET
 Ключи `ANTHROPIC_API_KEY` и `ELEVENLABS_API_KEY` заводятся на юрлицо ADV (биллинг ваш), `RESEND_API_KEY` —
 для писем с кодом входа (или укажите корпоративный SMTP — скажите, и соберём сборку под него).
 
-Доступ к приватному образу выдаётся разработчиком (read-only токен GitHub Container Registry):
+Доступ к приватному образу выдаётся разработчиком (логин и read-only токен GitHub Container Registry) — запросите до начала установки:
 
 ```bash
 echo "<токен>" | docker login ghcr.io -u <логин> --password-stdin

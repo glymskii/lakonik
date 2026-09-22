@@ -44,3 +44,4 @@ docs/marketing/
 docs/guide/screens/
 docs/guide/*.pdf
 site/.vercel/
+deploy/dist/
