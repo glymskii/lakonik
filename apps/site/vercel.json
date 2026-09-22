@@ -1,0 +1,8 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [{ "source": "/join/:token", "destination": "/join" }],
+  "headers": [
+    { "source": "/.well-known/apple-app-site-association", "headers": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Cache-Control", "value": "public, max-age=3600" }] }
+  ]
+}

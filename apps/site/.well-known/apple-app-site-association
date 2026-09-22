@@ -1,0 +1,8 @@
+{
+  "applinks": {
+    "details": [
+      { "appIDs": ["JWL983DY46.kz.adv.meetings"], "components": [ { "/": "/join/*", "comment": "Приглашение в организацию" } ] }
+    ]
+  },
+  "webcredentials": { "apps": ["JWL983DY46.kz.adv.meetings"] }
+}

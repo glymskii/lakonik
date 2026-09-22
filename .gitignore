@@ -43,3 +43,4 @@ packages/shared/templates.raw.json
 docs/marketing/
 docs/guide/screens/
 docs/guide/*.pdf
+site/.vercel/

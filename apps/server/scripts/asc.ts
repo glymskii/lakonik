@@ -5,6 +5,7 @@
  *   tsx scripts/asc.ts testers                — список бета-тестеров
  *   tsx scripts/asc.ts add <groupId> <email>  — добавить тестера в группу (внешние группы)
  *   tsx scripts/asc.ts invite <email…>        — отправить (повторно) приглашение TestFlight тестеру со статусом NOT_INVITED
+ *   tsx scripts/asc.ts app-name <название>     — имя приложения в App Store Connect (все локали appInfo), например Lakonik
  *   tsx scripts/asc.ts crashes [n]            — крэш-фидбек из TestFlight: список и текст n последних крэш-логов (по умолчанию 1)
  *   tsx scripts/asc.ts bundle-ids             — App ID команды с включёнными capabilities
  *   tsx scripts/asc.ts app-groups <bundleId…> — зарегистрировать App ID (если нет) и включить capability App Groups
@@ -64,6 +65,18 @@ if (cmd === "builds") {
     if (!t) { console.log(`${email}: не найден среди тестеров приложения`); continue; }
     await api("POST", "/betaTesterInvitations", { data: { type: "betaTesterInvitations", relationships: { betaTester: { data: { type: "betaTesters", id: t.id } }, app: { data: { type: "apps", id: APP_ID } } } } });
     console.log(`${email}: приглашение отправлено (было ${t.attributes.state})`);
+  }
+} else if (cmd === "app-name") {
+  const name = args[0];
+  if (!name) throw new Error("укажите название");
+  const infos = await api("GET", `/apps/${APP_ID}/appInfos?fields[appInfos]=appStoreState,state`);
+  for (const info of infos.data) {
+    const locs = await api("GET", `/appInfos/${info.id}/appInfoLocalizations?fields[appInfoLocalizations]=locale,name,subtitle`);
+    for (const l of locs.data) {
+      await api("PATCH", `/appInfoLocalizations/${l.id}`, { data: { type: "appInfoLocalizations", id: l.id, attributes: { name } } });
+      console.log(`appInfo ${info.id} (${info.attributes.state ?? info.attributes.appStoreState}) · ${l.attributes.locale}: «${l.attributes.name}» → «${name}»`);
+    }
+    if (!locs.data.length) console.log(`appInfo ${info.id}: локализаций нет`);
   }
 } else if (cmd === "testers") {
   const r = await api("GET", `/betaTesters?filter[apps]=${APP_ID}&limit=50&fields[betaTesters]=email,firstName,lastName,inviteType,state`);

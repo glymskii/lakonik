@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lakonik — приглашение</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<main class="doc">
+  <header class="top"><a class="logo" href="/">Lakonik</a></header>
+  <h1 id="title">Вас приглашают в организацию</h1>
+  <p class="lead" id="lead">Откройте эту ссылку на iPhone с установленным Lakonik — приложение откроется на экране приглашения.</p>
+  <p><a class="cta" id="open" href="#">Открыть в Lakonik</a> <a class="cta secondary" href="/support">Нет приложения?</a></p>
+  <p class="note">Если приложение ещё не установлено: установите Lakonik, затем снова откройте эту ссылку — или скопируйте её и вставьте на экране «Присоединиться».</p>
+  <script>
+    (function () {
+      var token = location.pathname.replace(/^\/join\/?/, "").replace(/\/$/, "");
+      var open = document.getElementById("open");
+      open.href = location.href; // Universal Link: iOS откроет приложение, если оно установлено
+      if (!token) { document.getElementById("title").textContent = "Ссылка-приглашение неполная"; document.getElementById("lead").textContent = "Попросите коллегу прислать ссылку ещё раз."; return; }
+      fetch("https://api.lakonik.app/api/join/" + encodeURIComponent(token)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (d && d.organizationName) document.getElementById("title").textContent = "Вас приглашают в «" + d.organizationName + "»";
+      }).catch(function () {});
+    })();
+  </script>
+  <footer><a href="/">На главную</a> © 2026 Lakonik</footer>
+</main>
+</body>
+</html>
