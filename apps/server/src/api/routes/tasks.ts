@@ -5,12 +5,14 @@ import { HTTPException } from "hono/http-exception";
 import { db } from "../../db/client.js";
 import { meetings, people, reports, shares, tasks } from "../../db/schema/index.js";
 import { findOrCreatePerson, isPlaceholderAssignee, normalizeTask, syncReportActionItems, type Task } from "../../tasks/service.js";
-import { loadMeetingWithAccess, requireOwner } from "../authz.js";
+import { loadMeetingWithAccess, requireOwner, accessibleMeetingsWhere } from "../authz.js";
+import { withOrg } from "../middleware/org.js";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
 import { ErrorSchema, IdParam, TaskCreateBody, TaskPatchBody, TaskSchema } from "../schemas.js";
 
 export const tasksRoutes = new OpenAPIHono<AppEnv>();
 tasksRoutes.use("*", requireUser);
+tasksRoutes.use("*", withOrg);
 
 type MeetingRow = typeof meetings.$inferSelect;
 
@@ -34,15 +36,6 @@ export function taskDto(t: Task, m: Pick<MeetingRow, "title" | "startedAt" | "ow
     isOwner: m.ownerId === userId,
     createdAt: t.createdAt.toISOString(),
   };
-}
-
-/** Встречи, доступные пользователю: свои + явно расшаренные (роли неявного доступа не дают — см. authz.ts). */
-function accessibleMeetingsWhere(u: { id: string; email: string; role: string; agencyId: string | null }) {
-  const sharedIds = db()
-    .select({ id: shares.meetingId })
-    .from(shares)
-    .where(and(or(eq(shares.recipientUserId, u.id), eq(shares.recipientEmail, u.email.toLowerCase())), or(isNull(shares.expiresAt), gt(shares.expiresAt, new Date()))));
-  return or(eq(meetings.ownerId, u.id), inArray(meetings.id, sharedIds));
 }
 
 const emojiSql = sql<string>`(select emoji from meeting_templates mt where mt.id = "meetings"."template_id")`;
@@ -74,7 +67,7 @@ tasksRoutes.openapi(
       q.assignee ? eq(tasks.assigneePersonId, q.assignee) : undefined,
       q.meetingId ? eq(tasks.meetingId, q.meetingId) : undefined,
       q.q ? ilike(tasks.task, `%${q.q}%`) : undefined,
-      accessibleMeetingsWhere(u),
+      accessibleMeetingsWhere(u, c.get("org")),
     );
     const rows = await d
       .select({ t: tasks, m: { title: meetings.title, startedAt: meetings.startedAt, ownerId: meetings.ownerId }, emoji: emojiSql })
@@ -91,7 +84,7 @@ tasksRoutes.openapi(
       })
       .from(tasks)
       .innerJoin(meetings, eq(meetings.id, tasks.meetingId))
-      .where(and(eq(tasks.isCurrent, true), accessibleMeetingsWhere(u)));
+      .where(and(eq(tasks.isCurrent, true), accessibleMeetingsWhere(u, c.get("org"))));
     return c.json({ items: rows.map((r) => taskDto(r.t, r.m, r.emoji ?? "📝", u.id)), openCount: counts[0]?.open ?? 0, overdueCount: counts[0]?.overdue ?? 0 }, 200);
   },
 );
@@ -141,7 +134,7 @@ tasksRoutes.openapi(
         patch.assigneePersonId = p.id;
         patch.assigneeName = p.name;
       } else if (body.assigneeName && !isPlaceholderAssignee(body.assigneeName)) {
-        const p = await findOrCreatePerson(body.assigneeName, { source: "manual", createdBy: u.id, agencyId: u.agencyId });
+        const p = await findOrCreatePerson(body.assigneeName, { source: "manual", createdBy: u.id, agencyId: u.agencyId, organizationId: row.m.organizationId });
         patch.assigneePersonId = p.id;
         patch.assigneeName = p.name;
       } else {
@@ -230,7 +223,7 @@ meetingTasksRoutes.openapi(
       personId = p.id;
       assigneeName = p.name;
     } else if (body.assigneeName && !isPlaceholderAssignee(body.assigneeName)) {
-      const p = await findOrCreatePerson(body.assigneeName, { source: "manual", createdBy: u.id, agencyId: u.agencyId });
+      const p = await findOrCreatePerson(body.assigneeName, { source: "manual", createdBy: u.id, agencyId: u.agencyId, organizationId: a.meeting.organizationId });
       personId = p.id;
       assigneeName = p.name;
     }
@@ -243,6 +236,7 @@ meetingTasksRoutes.openapi(
         reportId: r?.id ?? null,
         ownerId: a.meeting.ownerId,
         agencyId: a.meeting.agencyId,
+        organizationId: a.meeting.organizationId,
         position: (maxPos?.p ?? -1) + 1,
         task: body.task,
         normalizedTask: normalizeTask(body.task),

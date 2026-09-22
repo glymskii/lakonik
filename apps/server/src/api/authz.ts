@@ -1,8 +1,9 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, notInArray, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { db } from "../db/client.js";
-import { meetings, shares } from "../db/schema/index.js";
+import { meetings, members, shares } from "../db/schema/index.js";
 import type { SessionUser } from "./middleware/auth.js";
+import type { OrgContext } from "./middleware/org.js";
 
 export type Meeting = typeof meetings.$inferSelect;
 
@@ -38,6 +39,26 @@ export async function loadMeetingWithAccess(meetingId: string, user: SessionUser
     .limit(1);
   if (sh) return { meeting: m, isOwner: false, scope: sh.scope };
   throw new HTTPException(404, { message: "Встреча не найдена" });
+}
+
+/**
+ * Встречи в списке пространства: свои — только из текущего пространства; расшаренные со мной — из пространства встречи,
+ * а из организаций, где я не состою, — в личном пространстве. Без пространства (нет членств) — как раньше: свои + расшаренные.
+ */
+export function accessibleMeetingsWhere(u: Pick<SessionUser, "id" | "email">, org: OrgContext | null) {
+  const d = db();
+  const sharedIds = d
+    .select({ id: shares.meetingId })
+    .from(shares)
+    .where(and(or(eq(shares.recipientUserId, u.id), eq(shares.recipientEmail, u.email.toLowerCase())), or(isNull(shares.expiresAt), gt(shares.expiresAt, new Date()))));
+  const own = eq(meetings.ownerId, u.id);
+  const shared = inArray(meetings.id, sharedIds);
+  if (!org) return or(own, shared);
+  const inOrg = eq(meetings.organizationId, org.id);
+  if (org.kind !== "personal") return or(and(own, inOrg), and(shared, inOrg));
+  const myOrgIds = d.select({ id: members.organizationId }).from(members).where(eq(members.userId, u.id));
+  const foreign = or(isNull(meetings.organizationId), notInArray(meetings.organizationId, myOrgIds));
+  return or(and(own, inOrg), and(shared, or(inOrg, foreign)));
 }
 
 export function requireOwner(a: Access) {

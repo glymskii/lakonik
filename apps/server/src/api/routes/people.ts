@@ -1,14 +1,16 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { db } from "../../db/client.js";
 import { people, tasks } from "../../db/schema/index.js";
 import { findOrCreatePerson, normalizeName } from "../../tasks/service.js";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
+import { withOrg } from "../middleware/org.js";
 import { ErrorSchema, IdParam, PersonBody, PersonSchema } from "../schemas.js";
 
 export const peopleRoutes = new OpenAPIHono<AppEnv>();
 peopleRoutes.use("*", requireUser);
+peopleRoutes.use("*", withOrg);
 
 // Внимание: ${people.id} в select рендерится как "id" без имени таблицы и внутри подзапроса ссылался бы на t.id
 const openTasksSql = sql<number>`(select count(*) from ${tasks} t where t.assignee_person_id = "people"."id" and t.is_current and t.status = 'open')::int`;
@@ -22,16 +24,17 @@ peopleRoutes.openapi(
     method: "get",
     path: "/",
     tags: ["people"],
-    summary: "Справочник ответственных (общий для холдинга)",
+    summary: "Справочник ответственных текущего пространства",
     request: { query: z.object({ q: z.string().max(80).optional(), includeInactive: z.enum(["0", "1"]).default("0") }) },
     responses: { 200: { description: "OK", content: { "application/json": { schema: z.array(PersonSchema) } } } },
   }),
   async (c) => {
     const { q, includeInactive } = c.req.valid("query");
+    const org = c.get("org");
     const rows = await db()
       .select({ p: people, openTasks: openTasksSql })
       .from(people)
-      .where(and(includeInactive === "1" ? undefined : eq(people.isActive, true), q ? or(ilike(people.name, `%${q}%`), ilike(people.company, `%${q}%`), ilike(people.role, `%${q}%`)) : undefined))
+      .where(and(org ? eq(people.organizationId, org.id) : isNull(people.organizationId), includeInactive === "1" ? undefined : eq(people.isActive, true), q ? or(ilike(people.name, `%${q}%`), ilike(people.company, `%${q}%`), ilike(people.role, `%${q}%`)) : undefined))
       .orderBy(asc(people.name))
       .limit(500);
     return c.json(rows.map((r) => dto(r.p, r.openTasks)), 200);
@@ -50,7 +53,7 @@ peopleRoutes.openapi(
   async (c) => {
     const u = c.get("user");
     const body = c.req.valid("json");
-    const p = await findOrCreatePerson(body.name, { source: "manual", createdBy: u.id, agencyId: u.agencyId, role: body.role, company: body.company, email: body.email });
+    const p = await findOrCreatePerson(body.name, { source: "manual", createdBy: u.id, agencyId: u.agencyId, organizationId: c.get("org")?.id ?? null, role: body.role, company: body.company, email: body.email });
     // Дозаполняем пустые поля у существующего
     const patch: Partial<typeof people.$inferSelect> = {};
     if (!p.role && body.role) patch.role = body.role;

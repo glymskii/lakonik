@@ -27,6 +27,8 @@ export const TemplateSectionSchema = z
 export const TemplateSchema = z
   .object({
     id: z.string().uuid(),
+    /** null — встроенный шаблон, иначе приватный шаблон организации */
+    organizationId: z.string().uuid().nullable().optional(),
     code: z.string(),
     version: z.number().int(),
     group: z.enum(["internal", "client", "vendor"]),
@@ -302,6 +304,19 @@ export const DeviceBody = z
   .object({ platform: z.enum(["ios", "android"]), pushToken: z.string().min(10).max(500), appVersion: z.string().max(50).optional() })
   .openapi("DeviceBody");
 
+export const OrganizationBriefSchema = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    kind: z.enum(["personal", "team"]),
+    role: z.enum(["owner", "admin", "member"]),
+    plan: z.enum(["free", "enterprise"]),
+    planSeats: z.number().int().nullable(),
+    planUntil: z.string().nullable(),
+    membersCount: z.number().int(),
+  })
+  .openapi("OrganizationBrief");
+
 export const MeSchema = z
   .object({
     id: z.string(),
@@ -311,6 +326,10 @@ export const MeSchema = z
     role: z.string(),
     agencyId: z.string().nullable(),
     agencyName: z.string().nullable(),
+    /** Пространства пользователя: личное первым */
+    organizations: z.array(OrganizationBriefSchema),
+    /** Пространство по умолчанию для клиента без выбора (организация переноса → единственная командная → личная) */
+    defaultOrganizationId: z.string().uuid().nullable(),
   })
   .openapi("Me");
 

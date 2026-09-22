@@ -4,7 +4,7 @@ import { captureError } from "../observability/sentry.js";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 import { db } from "../db/client.js";
-import { audioObjects, meetingTemplates, meetings, reports, transcripts, usageEvents } from "../db/schema/index.js";
+import { audioObjects, meetingTemplates, meetings, organizations, reports, transcripts, usageEvents } from "../db/schema/index.js";
 import { logger } from "../logger.js";
 import { deleteObjects, getObjectBytes, objectKey, presignGet, putObject } from "../storage/s3.js";
 import { sttProvider, SttError } from "../stt/index.js";
@@ -104,7 +104,10 @@ async function transcribeStep(meeting: Meeting, mergedKey: string) {
 
   await setStatus(meeting.id, "transcribing", "Транскрибация");
   const keyterms: string[] = [];
-  if (meeting.agencyId) {
+  if (meeting.organizationId) {
+    const [o] = await d.select({ settings: organizations.settings }).from(organizations).where(eq(organizations.id, meeting.organizationId)).limit(1);
+    keyterms.push(...(o?.settings.keyterms ?? []));
+  } else if (meeting.agencyId) {
     const [ag] = await d.select({ keyterms: agencies.keyterms }).from(agencies).where(eq(agencies.id, meeting.agencyId)).limit(1);
     if (ag) keyterms.push(...ag.keyterms);
   }
@@ -160,6 +163,7 @@ async function transcribeStep(meeting: Meeting, mergedKey: string) {
     meetingId: meeting.id,
     userId: meeting.ownerId,
     agencyId: meeting.agencyId,
+    organizationId: meeting.organizationId,
     kind: "stt",
     provider: result.provider,
     amount: (result.audioDurationSec ?? 0).toString(),
@@ -198,6 +202,7 @@ async function analyzeSpeakersStep(meeting: Meeting) {
       meetingId: meeting.id,
       userId: meeting.ownerId,
       agencyId: meeting.agencyId,
+      organizationId: meeting.organizationId,
       kind: "llm",
       provider: "anthropic",
       model: result.model,
@@ -283,6 +288,7 @@ async function summarizeStep(meeting: Meeting, template: Template, opts: { effor
       meetingId: meeting.id,
       userId: meeting.ownerId,
       agencyId: meeting.agencyId,
+      organizationId: meeting.organizationId,
       kind: "llm",
       provider: "anthropic",
       model: res.model,

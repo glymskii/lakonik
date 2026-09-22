@@ -1,14 +1,16 @@
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
-import { and, asc, eq, ne } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { meetingTemplates } from "../../db/schema/index.js";
 import { catalog } from "../../templates/catalog.js";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
+import { withOrg } from "../middleware/org.js";
 import { TemplatesResponse } from "../schemas.js";
 
 export const templatesRoutes = new OpenAPIHono<AppEnv>();
 
 templatesRoutes.use("*", requireUser);
+templatesRoutes.use("*", withOrg);
 
 templatesRoutes.openapi(
   createRoute({
@@ -20,16 +22,23 @@ templatesRoutes.openapi(
   }),
   async (c) => {
     // Системные шаблоны (запись без типа) в выборе типа не показываем
-    const rows = await db().select().from(meetingTemplates).where(and(eq(meetingTemplates.isActive, true), ne(meetingTemplates.group, "system"))).orderBy(asc(meetingTemplates.sortOrder), asc(meetingTemplates.version));
+    const org = c.get("org");
+    const rows = await db()
+      .select()
+      .from(meetingTemplates)
+      .where(and(eq(meetingTemplates.isActive, true), ne(meetingTemplates.group, "system"), org ? or(isNull(meetingTemplates.organizationId), eq(meetingTemplates.organizationId, org.id)) : isNull(meetingTemplates.organizationId)))
+      .orderBy(asc(meetingTemplates.sortOrder), asc(meetingTemplates.version));
     const latest = new Map<string, (typeof rows)[number]>();
     for (const r of rows) {
       const cur = latest.get(r.code);
-      if (!cur || cur.version < r.version) latest.set(r.code, r);
+      // приватный шаблон организации перекрывает встроенный с тем же кодом; иначе — старшая версия
+      if (!cur || (!!r.organizationId && !cur.organizationId) || (!!r.organizationId === !!cur.organizationId && cur.version < r.version)) latest.set(r.code, r);
     }
     const templates = [...latest.values()]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((t) => ({
         id: t.id,
+        organizationId: t.organizationId,
         code: t.code,
         version: t.version,
         group: t.group as "internal" | "client" | "vendor",

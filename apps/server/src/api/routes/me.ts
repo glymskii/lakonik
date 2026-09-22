@@ -2,8 +2,12 @@ import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { agencies, devices, user as userTable } from "../../db/schema/index.js";
-import { asc, ilike, or } from "drizzle-orm";
+import { and, asc, ilike, or } from "drizzle-orm";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
+import { withOrg } from "../middleware/org.js";
+import { defaultOrganizationFor, membershipsOf } from "../../db/organizations.js";
+import { members } from "../../db/schema/index.js";
+import { sql } from "drizzle-orm";
 import { DeviceBody, MeSchema, AccountUserSchema } from "../schemas.js";
 import { z } from "@hono/zod-openapi";
 
@@ -25,7 +29,22 @@ meRoutes.openapi(
       const [a] = await db().select({ name: agencies.name }).from(agencies).where(eq(agencies.id, u.agencyId)).limit(1);
       agencyName = a?.name ?? null;
     }
-    return c.json({ id: u.id, email: u.email, name: u.name, image: u.image, role: u.role, agencyId: u.agencyId, agencyName }, 200);
+    const rows = await membershipsOf(u.id);
+    const counts = rows.length
+      ? await db().select({ id: members.organizationId, n: sql<number>`count(*)::int` }).from(members).where(sql`${members.organizationId} in ${rows.map((r) => r.org.id)}`).groupBy(members.organizationId)
+      : [];
+    const countById = new Map(counts.map((x) => [x.id, x.n]));
+    const organizations = rows.map((r) => ({
+      id: r.org.id,
+      name: r.org.name,
+      kind: r.org.kind,
+      role: r.role,
+      plan: r.org.plan,
+      planSeats: r.org.planSeats,
+      planUntil: r.org.planUntil ? r.org.planUntil.toISOString() : null,
+      membersCount: countById.get(r.org.id) ?? 1,
+    }));
+    return c.json({ id: u.id, email: u.email, name: u.name, image: u.image, role: u.role, agencyId: u.agencyId, agencyName, organizations, defaultOrganizationId: await defaultOrganizationFor(u.id) }, 200);
   },
 );
 
@@ -68,23 +87,25 @@ meRoutes.openapi(
 /** Справочник аккаунтов холдинга: для выбора спикеров и шаринга. */
 export const usersRoutes = new OpenAPIHono<AppEnv>();
 usersRoutes.use("*", requireUser);
+usersRoutes.use("*", withOrg);
 
 usersRoutes.openapi(
   createRoute({
     method: "get",
     path: "/",
     tags: ["users"],
-    summary: "Все аккаунты (имя, почта, агентство)",
+    summary: "Участники текущего пространства (имя, почта)",
     request: { query: z.object({ q: z.string().max(80).optional() }) },
     responses: { 200: { description: "OK", content: { "application/json": { schema: z.array(AccountUserSchema) } } } },
   }),
   async (c) => {
     const { q } = c.req.valid("query");
+    const org = c.get("org");
     const rows = await db()
       .select({ id: userTable.id, name: userTable.name, email: userTable.email, agencyId: userTable.agencyId, agencyName: agencies.name })
       .from(userTable)
       .leftJoin(agencies, eq(agencies.id, userTable.agencyId))
-      .where(q ? or(ilike(userTable.name, `%${q}%`), ilike(userTable.email, `%${q}%`)) : undefined)
+      .where(and(org ? sql`${userTable.id} in (select user_id from members where organization_id = ${org.id})` : undefined, q ? or(ilike(userTable.name, `%${q}%`), ilike(userTable.email, `%${q}%`)) : undefined))
       .orderBy(asc(userTable.name), asc(userTable.email))
       .limit(500);
     return c.json(rows.map((r) => ({ id: r.id, name: r.name, email: r.email, agencyId: r.agencyId, agencyName: r.agencyName ?? null })), 200);

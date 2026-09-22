@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { meetingTemplates, meetings, people, reports, settings, tasks } from "../db/schema/index.js";
+import { meetingTemplates, meetings, organizations, people, reports, settings, tasks } from "../db/schema/index.js";
 import { DEFAULT_DEADLINE_SETTINGS, type ActionItem, type DeadlineSettings } from "../db/types.js";
 import { renderMarkdown } from "../export/markdown.js";
 import { logger } from "../logger.js";
@@ -31,14 +31,24 @@ export function isPlaceholderAssignee(name: string | null | undefined): boolean 
 
 // ---------- Настройки ----------
 
-export async function getDeadlineSettings(): Promise<Required<DeadlineSettings>> {
+/** Сроки: настройки организации (organizations.settings.deadlines); без организации — старая глобальная строка */
+export async function getDeadlineSettings(organizationId?: string | null): Promise<Required<DeadlineSettings>> {
+  if (organizationId) {
+    const [o] = await db().select({ settings: organizations.settings }).from(organizations).where(eq(organizations.id, organizationId)).limit(1);
+    return { ...DEFAULT_DEADLINE_SETTINGS, ...(o?.settings.deadlines ?? {}) };
+  }
   const [row] = await db().select().from(settings).where(eq(settings.id, "global")).limit(1);
   return { ...DEFAULT_DEADLINE_SETTINGS, ...(row?.deadlines ?? {}) };
 }
 
-export async function saveDeadlineSettings(patch: DeadlineSettings, updatedBy: string): Promise<Required<DeadlineSettings>> {
-  const current = await getDeadlineSettings();
+export async function saveDeadlineSettings(patch: DeadlineSettings, updatedBy: string, organizationId?: string | null): Promise<Required<DeadlineSettings>> {
+  const current = await getDeadlineSettings(organizationId);
   const merged: DeadlineSettings = { ...current, ...patch };
+  if (organizationId) {
+    const [o] = await db().select({ settings: organizations.settings }).from(organizations).where(eq(organizations.id, organizationId)).limit(1);
+    await db().update(organizations).set({ settings: { ...(o?.settings ?? {}), deadlines: merged } }).where(eq(organizations.id, organizationId));
+    return { ...DEFAULT_DEADLINE_SETTINGS, ...merged };
+  }
   await db()
     .insert(settings)
     .values({ id: "global", deadlines: merged, updatedBy })
@@ -76,21 +86,23 @@ export function todayAlmaty(): string {
 
 // ---------- Люди ----------
 
-export async function findOrCreatePerson(name: string, opts: { source: "manual" | "ai"; createdBy: string | null; agencyId: string | null; role?: string | null; company?: string | null; email?: string | null }): Promise<Person> {
+/** Справочник людей живёт внутри организации: имя уникально в пределах organizationId */
+export async function findOrCreatePerson(name: string, opts: { source: "manual" | "ai"; createdBy: string | null; agencyId: string | null; organizationId: string | null; role?: string | null; company?: string | null; email?: string | null }): Promise<Person> {
   const d = db();
   const normalized = normalizeName(name);
-  const [existing] = await d.select().from(people).where(eq(people.normalizedName, normalized)).limit(1);
+  const orgWhere = opts.organizationId ? eq(people.organizationId, opts.organizationId) : isNull(people.organizationId);
+  const [existing] = await d.select().from(people).where(and(eq(people.normalizedName, normalized), orgWhere)).limit(1);
   if (existing) {
     if (!existing.isActive) await d.update(people).set({ isActive: true }).where(eq(people.id, existing.id));
     return existing;
   }
   const [created] = await d
     .insert(people)
-    .values({ name: name.trim(), normalizedName: normalized, role: opts.role ?? null, company: opts.company ?? null, email: opts.email?.toLowerCase() ?? null, agencyId: opts.agencyId, source: opts.source, createdBy: opts.createdBy })
+    .values({ name: name.trim(), normalizedName: normalized, role: opts.role ?? null, company: opts.company ?? null, email: opts.email?.toLowerCase() ?? null, agencyId: opts.agencyId, organizationId: opts.organizationId, source: opts.source, createdBy: opts.createdBy })
     .onConflictDoNothing()
     .returning();
   if (created) return created;
-  const [again] = await d.select().from(people).where(eq(people.normalizedName, normalized)).limit(1);
+  const [again] = await d.select().from(people).where(and(eq(people.normalizedName, normalized), orgWhere)).limit(1);
   return again!;
 }
 
@@ -106,7 +118,7 @@ function isValidIsoDate(s: string | null | undefined): s is string {
  */
 export async function syncTasksFromReport(meeting: Meeting, report: Report, items: ActionItem[]): Promise<Task[]> {
   const d = db();
-  const s = await getDeadlineSettings();
+  const s = await getDeadlineSettings(meeting.organizationId);
   const defaultDeadline = computeDefaultDeadline(meeting.startedAt, s);
 
   const previous = await d.select().from(tasks).where(and(eq(tasks.meetingId, meeting.id), eq(tasks.isCurrent, true)));
@@ -127,7 +139,7 @@ export async function syncTasksFromReport(meeting: Meeting, report: Report, item
       let personId: string | null = prev?.assigneePersonId ?? null;
       let assigneeName: string | null = prev?.assigneeName ?? item.assignee ?? null;
       if (!personId && !isPlaceholderAssignee(item.assignee)) {
-        const person = await findOrCreatePerson(item.assignee!, { source: "ai", createdBy: meeting.ownerId, agencyId: meeting.agencyId });
+        const person = await findOrCreatePerson(item.assignee!, { source: "ai", createdBy: meeting.ownerId, agencyId: meeting.agencyId, organizationId: meeting.organizationId });
         personId = person.id;
         assigneeName = person.name;
       }
@@ -141,6 +153,7 @@ export async function syncTasksFromReport(meeting: Meeting, report: Report, item
           reportId: report.id,
           ownerId: meeting.ownerId,
           agencyId: meeting.agencyId,
+          organizationId: meeting.organizationId,
           position: pos++,
           task: text,
           normalizedTask: normalized,

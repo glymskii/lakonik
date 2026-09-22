@@ -13,7 +13,8 @@ import { applySpeakerMerges } from "../../transcript/speakers.js";
 import { assembleSections, renderDocx, renderMarkdown, renderPdf } from "../../export/index.js";
 import { config } from "../../config.js";
 import { logger } from "../../logger.js";
-import { loadMeetingWithAccess, requireOwner, type Access } from "../authz.js";
+import { loadMeetingWithAccess, requireOwner, type Access, accessibleMeetingsWhere } from "../authz.js";
+import { withOrg } from "../middleware/org.js";
 import { currentTasks, getDeadlineSettings } from "../../tasks/service.js";
 import { taskDto } from "./tasks.js";
 import { requireUser, type AppEnv } from "../middleware/auth.js";
@@ -40,6 +41,7 @@ import {
 
 export const meetingsRoutes = new OpenAPIHono<AppEnv>();
 meetingsRoutes.use("*", requireUser);
+meetingsRoutes.use("*", withOrg);
 
 type Meeting = typeof meetings.$inferSelect;
 type Template = typeof meetingTemplates.$inferSelect;
@@ -131,12 +133,8 @@ meetingsRoutes.openapi(
     const u = c.get("user");
     const { q, status, limit, offset } = c.req.valid("query");
     const d = db();
-    const sharedIds = d
-      .select({ id: shares.meetingId })
-      .from(shares)
-      .where(and(or(eq(shares.recipientUserId, u.id), eq(shares.recipientEmail, u.email.toLowerCase())), or(isNull(shares.expiresAt), gt(shares.expiresAt, new Date()))));
     const where = and(
-      or(eq(meetings.ownerId, u.id), inArray(meetings.id, sharedIds)),
+      accessibleMeetingsWhere(u, c.get("org")),
       q ? ilike(meetings.title, `%${q}%`) : undefined,
       status ? eq(meetings.status, status as Meeting["status"]) : undefined,
     );
@@ -180,6 +178,7 @@ meetingsRoutes.openapi(
       .values({
         ownerId: u.id,
         agencyId: u.agencyId,
+        organizationId: c.get("org")?.id ?? null,
         templateId: t.id,
         templateCode: t.code,
         templateVersion: t.version,

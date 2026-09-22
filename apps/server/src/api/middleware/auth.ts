@@ -11,7 +11,9 @@ export interface SessionUser {
   agencyId: string | null;
 }
 
-export type AppEnv = { Variables: { user: SessionUser; sessionId: string } };
+import type { OrgContext } from "./org.js";
+
+export type AppEnv = { Variables: { user: SessionUser; sessionId: string; org: OrgContext | null } };
 
 /** Требует bearer-токен Better Auth; кладёт пользователя в контекст. */
 export const requireUser = createMiddleware<AppEnv>(async (c, next) => {
