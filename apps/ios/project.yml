@@ -6,6 +6,7 @@ options:
   xcodeVersion: "26.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
+  developmentLanguage: ru
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -18,11 +19,17 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SENTRY_DSN: "" # DSN sentry-cocoa; пусто — SDK не запускается
   configs:
     Debug:
       API_BASE_URL: "http://localhost:3000"
     Release:
-      API_BASE_URL: "https://api-production-46e8.up.railway.app"
+      API_BASE_URL: "https://api.lakonik.app"
+packages:
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: 8.40.0
 targets:
   Lakonik:
     type: application
@@ -30,6 +37,8 @@ targets:
     sources:
       - path: Lakonik
     dependencies:
+      - package: Sentry
+        product: Sentry
       - target: LakonikWidgets
         embed: true
         codeSign: true
@@ -50,7 +59,7 @@ targets:
       path: Lakonik/Resources/Info.plist
       properties:
         CFBundleDisplayName: Lakonik
-        CFBundleName: ADV Meetings
+        CFBundleName: Lakonik
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDevelopmentRegion: ru
@@ -63,6 +72,7 @@ targets:
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: false
         API_BASE_URL: $(API_BASE_URL)
+        SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         BGTaskSchedulerPermittedIdentifiers: [kz.adv.meetings.upload-retry]

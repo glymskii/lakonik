@@ -102,6 +102,8 @@ xcodebuild -project Lakonik.xcodeproj -scheme Lakonik -configuration Debug \
   API_BASE_URL=https://<api-domain> build
 ```
 
+Строки интерфейса — в String Catalog `Lakonik/Resources/Localizable.xcstrings` (базовый язык ru; `SWIFT_EMIT_LOC_STRINGS`). Xcode обновляет каталог сам при сборке, xcodebuild — нет: после сборки в `/tmp/adv-sim` выполните `apps/ios/scripts/sync-strings.sh /tmp/adv-sim`. Новые строки в коде вне SwiftUI-литералов — через `String(localized:)`. Sentry (`sentry-cocoa`) запускается только при непустом `SENTRY_DSN` в настройках сборки.
+
 ## Релиз в TestFlight
 
 Приложение в App Store Connect: **Lakonik** (ранее ADV Meetings, ID 6812003830, bundle `kz.adv.meetings` не меняется), внутренняя группа **ADV Internal** с доступом ко всем сборкам. Номер билда = число коммитов.

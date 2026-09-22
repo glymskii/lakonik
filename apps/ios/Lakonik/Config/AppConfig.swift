@@ -17,5 +17,10 @@ enum AppConfig {
 
     /// Длительность одного сегмента записи (секунды)
     static let segmentDuration: TimeInterval = 300
+    #if DEBUG
+    static let isDebug = true
+    #else
+    static let isDebug = false
+    #endif
     static let appGroupless = true
 }
