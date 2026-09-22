@@ -79,6 +79,9 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         LSSupportsOpeningDocumentsInPlace: true
         UIFileSharingEnabled: true
+        CFBundleURLTypes:
+          - CFBundleURLName: kz.adv.meetings.callback
+            CFBundleURLSchemes: [lakonik]
         CFBundleDocumentTypes:
           - CFBundleTypeName: Audio
             LSHandlerRank: Alternate

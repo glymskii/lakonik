@@ -562,6 +562,19 @@ struct Entitlement: Codable, Hashable {
 
 struct SubmitTransactionBody: Encodable { let jws: String }
 
+/// Подключение к записям Google Meet / Zoom — GET /api/integrations
+struct Integration: Codable, Hashable, Identifiable {
+    let provider: String // google_meet | zoom
+    let accountEmail: String?
+    let autoImport: Bool
+    let lastSyncAt: Date?
+    let lastError: String?
+    let status: String // active | error | revoked
+    var id: String { provider }
+    var title: String { provider == "zoom" ? "Zoom" : "Google Meet" }
+}
+struct IntegrationPatchBody: Encodable { let autoImport: Bool }
+
 /// Ошибка квоты (HTTP 402): что именно исчерпано и когда обновится
 struct QuotaErrorBody: Decodable {
     let error: String

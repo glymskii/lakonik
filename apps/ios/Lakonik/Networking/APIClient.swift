@@ -154,6 +154,18 @@ extension APIClient {
     func me() async throws -> Me { try await request("GET", "/api/me") }
     func deleteAccount() async throws { try await raw("DELETE", "/api/me") }
 
+    // MARK: Интеграции Meet / Zoom
+    func integrations() async throws -> [Integration] { try await request("GET", "/api/integrations") }
+    func integrationConnectURL(provider: String) async throws -> URL {
+        struct R: Decodable { let authUrl: String }
+        let r: R = try await request("GET", "/api/integrations/\(provider)/connect")
+        guard let u = URL(string: r.authUrl) else { throw APIError.decoding(NSError(domain: "Integrations", code: 1)) }
+        return u
+    }
+    func updateIntegration(provider: String, autoImport: Bool) async throws { try await raw("PATCH", "/api/integrations/\(provider)", body: IntegrationPatchBody(autoImport: autoImport)) }
+    func disconnectIntegration(provider: String) async throws { try await raw("DELETE", "/api/integrations/\(provider)") }
+    func syncIntegration(provider: String) async throws { try await raw("POST", "/api/integrations/\(provider)/sync") }
+
     // MARK: Тариф и покупки
     func entitlement() async throws -> Entitlement { try await request("GET", "/api/billing/entitlement") }
     func submitTransaction(jws: String) async throws -> Entitlement { try await request("POST", "/api/billing/apple/transactions", body: SubmitTransactionBody(jws: jws)) }

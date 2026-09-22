@@ -81,6 +81,7 @@ struct SettingsView: View {
                     }
                 }
                 Section("Задачи и сроки") {
+                    NavigationLink { IntegrationsView() } label: { Label("Интеграции: Meet, Zoom", systemImage: "video.badge.checkmark") }
                     NavigationLink { DeadlineSettingsView() } label: { Label("Сроки задач и отчётов", systemImage: "calendar.badge.clock") }
                     NavigationLink { PeopleManagerView() } label: { Label("Справочник ответственных", systemImage: "person.2") }
                 }
