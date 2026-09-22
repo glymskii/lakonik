@@ -41,3 +41,5 @@ packages/shared/templates.raw.json
 
 # Маркетинговые материалы (скриншоты для соцсетей) — не публикуем
 docs/marketing/
+docs/guide/screens/
+docs/guide/*.pdf

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>ADV Meetings — памятка сотрудника</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; color: #111; font-size: 11.5pt; line-height: 1.35; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  h1 { font-size: 30pt; margin: 0 0 6mm; letter-spacing: -0.02em; }
+  h2 { font-size: 19pt; margin: 0 0 4mm; letter-spacing: -0.01em; }
+  h2 .n { display: inline-block; min-width: 9mm; height: 9mm; line-height: 9mm; text-align: center; border-radius: 50%; background: #1f6fe5; color: #fff; font-size: 12pt; margin-right: 3mm; vertical-align: 3px; }
+  .lead { color: #555; margin: 0 0 5mm; }
+  ol.steps { margin: 0 0 5mm; padding-left: 6mm; }
+  ol.steps li { margin: 0 0 1.6mm; }
+  ol.steps b { font-weight: 600; }
+  .note { background: #f3f5f9; border-left: 3px solid #1f6fe5; padding: 2.5mm 3.5mm; border-radius: 2mm; margin: 0 0 5mm; font-size: 10.5pt; }
+  .note.warn { border-left-color: #e5541f; background: #fbf1ec; }
+  .shots { display: flex; gap: 4mm; align-items: flex-start; }
+  .shot { flex: 1 1 0; min-width: 0; }
+  .shot img { width: 100%; display: block; border: 1px solid #d5d8de; border-radius: 4mm; }
+  .shot .cap { font-size: 9.5pt; color: #555; text-align: center; margin-top: 1.5mm; }
+  .shots.two .shot { flex: 0 0 calc(50% - 2mm); max-width: 52mm; }
+  .shots { page-break-inside: avoid; }
+  .shots.center { justify-content: center; }
+  .cover { display: flex; flex-direction: column; justify-content: center; height: 250mm; }
+  .cover .sub { font-size: 14pt; color: #444; margin-bottom: 10mm; }
+  .cover .toc { columns: 2; column-gap: 10mm; font-size: 11pt; }
+  .cover .toc div { break-inside: avoid; margin-bottom: 1.5mm; }
+  .cover .toc span { display: inline-block; width: 7mm; color: #1f6fe5; font-weight: 600; }
+  .meta { color: #777; font-size: 9.5pt; margin-top: 14mm; }
+  .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 6mm; margin-bottom: 5mm; }
+  .kv div { background: #f3f5f9; border-radius: 2mm; padding: 2.5mm 3.5mm; font-size: 10.5pt; }
+  .kv b { display: block; font-weight: 600; margin-bottom: 0.5mm; }
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <h1>ADV Meetings<br>Памятка сотрудника</h1>
+  <div class="sub">Запись встречи → расшифровка → контакт-репорт → задачи. Только конкретные шаги.</div>
+  <div class="toc">
+    <div><span>1</span>Установка и вход</div>
+    <div><span>2</span>Записать встречу</div>
+    <div><span>3</span>Что происходит после записи</div>
+    <div><span>4</span>Проверить, кто говорил</div>
+    <div><span>5</span>Тип встречи и отчёт</div>
+    <div><span>6</span>Исправить отчёт</div>
+    <div><span>7</span>Поделиться и экспорт</div>
+    <div><span>8</span>Транскрипт и имена спикеров</div>
+    <div><span>9</span>Задачи</div>
+    <div><span>10</span>Импорт файла и онлайн-встречи</div>
+    <div><span>11</span>Настройки</div>
+  </div>
+  <div class="meta">Версия приложения 0.1.0 (TestFlight, сборка 26) · сентябрь 2026 · данные на экранах демонстрационные</div>
+</section>
+
+<section class="page">
+  <h2><span class="n">1</span>Установка и вход</h2>
+  <ol class="steps">
+    <li>Примите приглашение в <b>TestFlight</b> (письмо «You're invited to test ADV Meetings») и установите приложение.</li>
+    <li>Откройте приложение, введите <b>корпоративную почту</b> → «Получить код».</li>
+    <li>Введите <b>6-значный код</b> из письма → «Войти». Вход запоминается на 90 дней.</li>
+    <li>Альтернатива — «Вход с Apple» (если Apple ID привязан к корпоративной почте).</li>
+    <li>При первом старте записи разрешите доступ к <b>микрофону</b> и <b>уведомлениям</b>.</li>
+  </ol>
+  <div class="note">Вход только с почты агентств холдинга. Письмо с кодом не пришло — проверьте «Спам» и нажмите «Получить код» ещё раз.</div>
+  <div class="shots two center">
+    <div class="shot"><img src="screens/01-signin.png"><div class="cap">Почта → «Получить код»</div></div>
+    <div class="shot"><img src="screens/02-signin-code.png"><div class="cap">Код из письма → «Войти»</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">2</span>Записать встречу</h2>
+  <ol class="steps">
+    <li>На вкладке «Встречи» нажмите <b>«Записать встречу»</b> — запись начинается сразу, положите телефон ближе к говорящим.</li>
+    <li>Экран можно <b>заблокировать</b> и убрать телефон: запись идёт в фоне, на экране блокировки — таймер и кнопки.</li>
+    <li><b>Отметка</b> — закладка на важном моменте, <b>Пауза</b> — перерыв, <b>Стоп</b> — завершить и отправить на обработку.</li>
+    <li><b>«Выбрать тип встречи»</b> (необязательно): с кем встреча → подтип → контекст → «Сохранить». Тогда отчёт составится автоматически. Тип можно указать и после расшифровки.</li>
+    <li>«Отменить» → «Удалить запись» — удаляет запись безвозвратно.</li>
+  </ol>
+  <div class="note warn">Во время телефонного звонка или звонка в Meet/Zoom записать с того же iPhone нельзя — iOS не отдаёт микрофон. Для онлайн-встреч см. раздел 10.</div>
+  <div class="shots">
+    <div class="shot"><img src="screens/03-list.png"><div class="cap">«Записать встречу»</div></div>
+    <div class="shot"><img src="screens/04-recording.png"><div class="cap">Идёт запись, тип пока не выбран</div></div>
+    <div class="shot"><img src="screens/08-recording-typed.png"><div class="cap">Тип выбран — отчёт будет сам</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">3</span>Что происходит после записи</h2>
+  <ol class="steps">
+    <li>После «Стоп» встреча получает статус <b>«В очереди» → «Аудио» → «Расшифровка» → «Отчёт»</b>. Приложение можно закрыть.</li>
+    <li>Через несколько минут придёт push: <b>«Отчёт готов»</b> (тип был выбран) или <b>«Расшифровка готова»</b> (тип не выбран — см. разделы 4–5).</li>
+    <li>Статус «Ошибка» → откройте встречу → <b>«Повторить»</b>. Частая причина — тишина в записи.</li>
+  </ol>
+  <div class="shots">
+    <div class="shot"><img src="screens/09-processing.png"><div class="cap">Обработка идёт</div></div>
+    <div class="shot"><img src="screens/10-transcribed.png"><div class="cap">Расшифровка готова — нужен ваш шаг</div></div>
+    <div class="shot"><img src="screens/22-info.png"><div class="cap">Вкладка «Инфо»: срок отправки отчёта</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">4</span>Проверить, кто говорил</h2>
+  <ol class="steps">
+    <li>Откройте встречу со статусом «Расшифровка готова» → <b>«Проверить спикеров и выбрать тип встречи»</b>.</li>
+    <li>Для каждого говорящего проверьте <b>имя</b> по примеру реплики. ИИ подставляет подсказку, если уверен; иначе — кнопка «Применить».</li>
+    <li>Укажите <b>сторону</b>: Коллега / Клиент / Вендор. Себя отметьте кнопкой <b>«Это я»</b>.</li>
+    <li>Одного человека разбило на двух — у дубля <b>«Объединить с другим спикером»</b>. Подсказанные дубли уже объединены: проверьте, лишнее — «Отменить».</li>
+    <li><b>«Далее: тип встречи и отчёт»</b>. Или «Сохранить спикеров без отчёта», если отчёт не нужен.</li>
+  </ol>
+  <div class="shots two center">
+    <div class="shot"><img src="screens/11-speakers.png"><div class="cap">Имя, сторона, «Это я»</div></div>
+    <div class="shot"><img src="screens/12-speakers-merge.png"><div class="cap">Дубль объединён с основным спикером</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">5</span>Тип встречи и отчёт</h2>
+  <ol class="steps">
+    <li>Выберите, <b>с кем</b> встреча: Внутренняя / С клиентом / С вендором — или из «Недавних».</li>
+    <li>Выберите <b>подтип</b> (знакомство, бриф, статус, дебрифинг…) — он задаёт структуру отчёта по регламенту холдинга.</li>
+    <li>Заполните, что знаете: проект, участники, платформа. Всё необязательно — чего нет, ИИ возьмёт из записи, а не найденное отметит «не озвучено, уточнить».</li>
+    <li>Нажмите <b>«Сформировать отчёт»</b>. Push «Отчёт готов» придёт через 1–3 минуты.</li>
+  </ol>
+  <div class="shots">
+    <div class="shot"><img src="screens/05-type-groups.png"><div class="cap">С кем встреча</div></div>
+    <div class="shot"><img src="screens/06-type-client.png"><div class="cap">Подтип</div></div>
+    <div class="shot"><img src="screens/14-review-generate.png"><div class="cap">Контекст → «Сформировать отчёт»</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">6</span>Исправить отчёт</h2>
+  <ol class="steps">
+    <li>Откройте встречу → вкладка <b>«Отчёт»</b>: резюме, участники, разделы по шаблону, action plan с ответственными и сроками.</li>
+    <li><b>«Исправить с ИИ»</b> — напишите, что не так («Спикер 2 — это Данияр», «бюджет 40 млн — это медиа», «убери пункт про наружку»), нажмите подсказки из блока «Уточнить/Ответ», затем <b>«Пересобрать»</b>. Прежняя версия остаётся в истории («Инфо»).</li>
+    <li><b>«Править текст»</b> — исправьте заголовок и любой раздел вручную → «Сохранить».</li>
+    <li>Другой тип отчёта по той же записи: «Исправить с ИИ» → внизу «Тип встречи» → выбрать → «Пересобрать».</li>
+  </ol>
+  <div class="shots">
+    <div class="shot"><img src="screens/15-report.png"><div class="cap">Отчёт</div></div>
+    <div class="shot"><img src="screens/16-ai-fix.png"><div class="cap">«Исправить с ИИ»</div></div>
+    <div class="shot"><img src="screens/17-edit-text.png"><div class="cap">«Править текст»</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">7</span>Поделиться и экспорт</h2>
+  <ol class="steps">
+    <li>В карточке встречи нажмите <b>«…»</b> (вверху справа).</li>
+    <li><b>«Поделиться с коллегой»</b> → «Выбрать из аккаунтов холдинга» или ввести почту → при необходимости включите «Вместе с транскриптом» → «Поделиться». Коллега увидит встречу в своём списке.</li>
+    <li>Отозвать доступ — в том же окне смахните запись в «Доступ есть у» влево.</li>
+    <li><b>Экспорт</b>: Word (.docx), PDF, Markdown, Транскрипт (.txt) — файл откроется в системном меню «Поделиться» (почта, Telegram, Файлы).</li>
+    <li>«Удалить встречу» — удаляет расшифровку и отчёт у всех, с кем вы делились.</li>
+  </ol>
+  <div class="note">Встречу видят только вы и те, с кем поделились. Руководители и коллеги без доступа её не видят.</div>
+  <div class="shots two center">
+    <div class="shot"><img src="screens/18-menu.png"><div class="cap">Меню «…»: экспорт и доступ</div></div>
+    <div class="shot"><img src="screens/19-share.png"><div class="cap">Кому открыт доступ</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">8</span>Транскрипт и имена спикеров</h2>
+  <ol class="steps">
+    <li>Вкладка <b>«Транскрипт»</b>: реплики по говорящим с таймкодами. Чипы сверху — фильтр по одному спикеру.</li>
+    <li>Нажмите на <b>имя спикера</b> → «Кто это?»: выберите коллегу из аккаунтов, введите имя вручную или подпишите «Клиент N».</li>
+    <li>Укажите сторону (Коллега / Клиент / Вендор) — она попадёт в отчёт. Себя — <b>«Это я»</b>.</li>
+    <li>После правки имён нажмите «Исправить с ИИ» → «Пересобрать», чтобы отчёт использовал новые имена.</li>
+  </ol>
+  <div class="shots two center">
+    <div class="shot"><img src="screens/20-transcript.png"><div class="cap">Транскрипт по спикерам</div></div>
+    <div class="shot"><img src="screens/21-speaker-menu.png"><div class="cap">«Кто это?»</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">9</span>Задачи</h2>
+  <ol class="steps">
+    <li>Вкладка <b>«Задачи»</b>: все action items со всех ваших встреч и встреч, которыми с вами поделились. Фильтры: Открытые / Все / Выполненные; группировка по срокам.</li>
+    <li>Откройте задачу → <b>«Отметить выполненной»</b>. Вернуть — «Вернуть в работу». Можно и кружком в списке или смахиванием.</li>
+    <li>Ответственный и срок: измените и нажмите «Сохранить» (доступно автору встречи). Подсказки «Завтра / Через 3 дня / Неделя».</li>
+    <li>Нажмите на встречу внизу карточки, чтобы открыть контекст задачи.</li>
+  </ol>
+  <div class="shots two center">
+    <div class="shot"><img src="screens/23-tasks.png"><div class="cap">Список задач</div></div>
+    <div class="shot"><img src="screens/24-task.png"><div class="cap">Карточка задачи</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">10</span>Импорт файла и онлайн-встречи</h2>
+  <ol class="steps">
+    <li><b>Импорт</b>: «+» (вверху справа) → «Импортировать аудио / видео» → выберите файл (m4a, mp3, mp4, wav…). Дальше — как с обычной записью. Из любого приложения: «Поделиться» → ADV Meetings.</li>
+    <li><b>Google Meet / Zoom / Teams на этом же iPhone</b>: «+» → «Записать онлайн-встречу» → красная кнопка → в системном диалоге «Запись встречи», включите микрофон → «Начать трансляцию». После встречи вернитесь и нажмите «Остановить».</li>
+    <li>Ограничение iOS: во время звонка записываются <b>только собеседники</b>, ваш голос — нет. Подходит для вебинаров и встреч, где вы слушаете.</li>
+    <li>Чтобы записать онлайн-встречу целиком: включите <b>запись в самом Meet/Zoom</b>, а потом импортируйте файл (шаг 1).</li>
+  </ol>
+  <div class="shots two center">
+    <div class="shot"><img src="screens/25-plus-menu.png"><div class="cap">Меню «+»</div></div>
+    <div class="shot"><img src="screens/26-online.png"><div class="cap">Онлайн-встреча</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h2><span class="n">11</span>Настройки</h2>
+  <div class="kv">
+    <div><b>Имя</b>Подставляется в транскрипт и отчёт, когда вы отмечаете себя («Это я»).</div>
+    <div><b>Сроки задач и отчётов</b>Срок задач по умолчанию, напоминания, регламент отчёта: команде — 24 ч, клиенту — 48 ч.</div>
+    <div><b>Справочник ответственных</b>Люди, которым назначаются задачи (коллеги, клиенты, подрядчики).</div>
+    <div><b>Аудио на устройстве</b>Удалять после отправки / хранить 7 дней / вручную. На сервере аудио удаляется сразу после расшифровки.</div>
+  </div>
+  <ol class="steps">
+    <li><b>Выйти</b> — «Настройки» → «Выйти». Записи и отчёты остаются на сервере и появятся после повторного входа.</li>
+    <li>Не приходят push — «Настройки iPhone» → ADV Meetings → Уведомления → включить.</li>
+    <li>Вопросы и ошибки — напишите ответственному за приложение, приложив скриншот и название встречи.</li>
+  </ol>
+  <div class="shots two center">
+    <div class="shot"><img src="screens/27-settings.png"><div class="cap">Настройки</div></div>
+  </div>
+</section>
+
+</body>
+</html>
