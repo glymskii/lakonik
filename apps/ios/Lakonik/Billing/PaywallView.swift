@@ -68,6 +68,8 @@ struct PaywallView: View {
                 if let s = e.subscription, let until = s.expiresAt {
                     LabeledContent(s.autoRenew ? "Продление" : "Действует до", value: until.formatted(.dateTime.day().month(.abbreviated).year().locale(Locale(identifier: "ru_RU"))))
                 }
+            } else if store.loaded {
+                Text("На этом сервере тарифы не включены — ограничений нет.").foregroundStyle(.secondary)
             } else {
                 HStack { ProgressView(); Text("Загрузка…").foregroundStyle(.secondary) }
             }

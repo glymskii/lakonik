@@ -14,6 +14,8 @@ final class EntitlementStore {
     static let productIds = ["lakonik.starter.monthly", "lakonik.starter.yearly", "lakonik.pro.monthly", "lakonik.pro.yearly", "lakonik.unlimited.monthly", "lakonik.unlimited.yearly"]
 
     private(set) var entitlement: Entitlement?
+    /// Сервер ответил на запрос тарифа (успехом или 404 — биллинг не включён)
+    private(set) var loaded = false
     private(set) var products: [Product] = []
     private(set) var purchasing = false
     var lastError: String?
@@ -38,9 +40,9 @@ final class EntitlementStore {
     }
 
     func refresh() async {
-        do { entitlement = try await APIClient.shared.entitlement() } catch {
+        do { entitlement = try await APIClient.shared.entitlement(); loaded = true } catch {
             // Старый сервер без биллинга — работаем без лимитов
-            if case APIError.server(let status, _) = error, status == 404 { entitlement = nil } else { log.warning("entitlement: \(error.localizedDescription)") }
+            if case APIError.server(let status, _) = error, status == 404 { entitlement = nil; loaded = true } else { log.warning("entitlement: \(error.localizedDescription)") }
         }
     }
 

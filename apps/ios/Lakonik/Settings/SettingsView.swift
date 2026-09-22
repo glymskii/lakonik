@@ -1,8 +1,10 @@
 import SwiftUI
+import UIKit
 
 @MainActor
 struct SettingsView: View {
     @Environment(AuthService.self) private var auth
+    @Environment(\.openURL) private var openURL
     @State private var retention = AudioRetention.current
     @State private var apiOverride = UserDefaults.standard.string(forKey: AppConfig.overrideKey) ?? ""
     @State private var localMeetings: [LocalMeeting] = []
@@ -119,6 +121,14 @@ struct SettingsView: View {
                 } header: { Text("Сервер (отладка)") } footer: { Text("Только в Debug-сборке. По умолчанию: \(AppConfig.defaultBaseURL.absoluteString)") }
                 #endif
                 Section {
+                    Button { openURL(supportMailURL()) } label: { Label("Написать в поддержку", systemImage: "envelope") }
+                    Link(destination: URL(string: "https://lakonik.app/support")!) { Label("Частые вопросы", systemImage: "questionmark.circle") }
+                } header: {
+                    Text("Поддержка")
+                } footer: {
+                    Text("В письмо подставятся версия приложения и идентификатор аккаунта — так мы быстрее найдём причину.")
+                }
+                Section {
                     Button("Удалить аккаунт", role: .destructive) { confirmDelete = true }
                 } footer: {
                     Text("Удаляются профиль, личное пространство со всеми записями и участие в организациях. Активная подписка отменяется в Настройках Apple ID.")
@@ -147,6 +157,15 @@ struct SettingsView: View {
     }
 
     private func reload() async { localMeetings = await LocalStore.shared.withAudioOrPending() }
+
+    private func supportMailURL() -> URL {
+        let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? ""
+        let build = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? ""
+        let body = "\n\n—\nLakonik \(version) (\(build)), iOS \(UIDevice.current.systemVersion), \(UIDevice.current.model)\nАккаунт: \(auth.me?.id ?? "—")\nПространство: \(workspace.current?.name ?? "—")"
+        var c = URLComponents(string: "mailto:support@lakonik.app")!
+        c.queryItems = [URLQueryItem(name: "subject", value: "Lakonik: вопрос"), URLQueryItem(name: "body", value: body)]
+        return c.url!
+    }
 
     private func deleteAccount() async {
         deleteText = ""
