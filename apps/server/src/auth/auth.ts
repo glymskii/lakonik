@@ -7,6 +7,7 @@ import { config } from "../config.js";
 import { logger } from "../logger.js";
 import { otpEmail, sendMail } from "../email/mailer.js";
 import { emailDomain, isEmailAllowed } from "./allowlist.js";
+import { track } from "../analytics/amplitude.js";
 import { agencies } from "../db/schema/index.js";
 
 async function agencyDomains(): Promise<{ id: string; domains: string[] }[]> {
@@ -100,6 +101,16 @@ export function createAuth() {
             const domain = emailDomain(u.email);
             const agency = domains.find((d) => d.domains.map((x) => x.toLowerCase()).includes(domain));
             return { data: { ...u, agencyId: agency?.id ?? null, role: "member" } };
+          },
+          after: async (u) => {
+            track(u.id, "signup", { domain: emailDomain(u.email) });
+          },
+        },
+      },
+      session: {
+        create: {
+          after: async (s) => {
+            track(s.userId, "login", {});
           },
         },
       },

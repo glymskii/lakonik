@@ -1,4 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
+import { track } from "../analytics/amplitude.js";
+import { captureError } from "../observability/sentry.js";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 import { db } from "../db/client.js";
@@ -336,15 +338,18 @@ export async function processMeeting(job: ProcessMeetingJob): Promise<void> {
     if (current.code === UNCLASSIFIED_TEMPLATE_CODE) {
       // Быстрая запись без типа: расшифровка готова, отчёт строится после того, как пользователь подтвердит спикеров и выберет тип
       await setStatus(meetingId, "transcribed", "Расшифровка готова — проверьте спикеров и выберите тип встречи");
+      track(fresh.meeting.ownerId, "transcript_ready", { durationSec: fresh.meeting.durationSec ?? null });
       await enqueueNotify({ meetingId, kind: "transcript_ready" });
       return;
     }
     await summarizeStep(fresh.meeting, current, { effort: job.effort, model: job.model, createdBy: job.regenerate ? "regenerate" : "pipeline", instructions: job.instructions?.trim() || undefined });
+    track(fresh.meeting.ownerId, "report_ready", { template: current.code, regenerate: !!job.regenerate, model: job.model ?? "default" });
     await enqueueNotify({ meetingId, kind: "report_ready" });
   } catch (e) {
     const err = e as Error;
     const retryable = e instanceof PipelineError ? e.retryable : true;
     log.error({ err: err.message, retryable }, "Ошибка пайплайна");
+    captureError(e, { meetingId, retryable: String(retryable) });
     if (!retryable) {
       await setStatus(meetingId, "failed", null, err.message);
       await enqueueNotify({ meetingId, kind: "failed" });

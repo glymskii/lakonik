@@ -1,4 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { captureError } from "../observability/sentry.js";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
@@ -61,6 +62,7 @@ export function createApp() {
       return c.json({ error: err.message, code: String(err.status) }, err.status);
     }
     logger.error({ err, path: c.req.path, reqId: c.get("requestId") }, "Unhandled error");
+    captureError(err, { path: c.req.path, reqId: c.get("requestId") });
     return c.json({ error: "Внутренняя ошибка сервера", code: "INTERNAL" }, 500);
   });
 

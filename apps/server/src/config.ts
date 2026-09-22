@@ -64,6 +64,8 @@ const schema = z.object({
   PIPELINE_STUCK_MINUTES: z.coerce.number().default(30),
   // Для тестов: подменить внешние провайдеры заглушками
   FAKE_PROVIDERS: bool,
+  SENTRY_DSN: z.string().optional(),
+  AMPLITUDE_API_KEY: z.string().optional(),
 });
 
 export type Config = z.infer<typeof schema>;

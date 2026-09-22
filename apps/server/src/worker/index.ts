@@ -5,11 +5,14 @@ import { getBoss, QUEUES, stopBoss, type NotifyJob, type ProcessMeetingJob } fro
 import { markFailedFromDlq, processMeeting } from "../pipeline/process-meeting.js";
 import { sweepAudio, sweepStuck } from "../pipeline/sweeps.js";
 import { notifyMeeting, sendTaskReminders } from "../push/apns.js";
+import { flushSentry, initSentry } from "../observability/sentry.js";
+import { flush as flushAnalytics } from "../analytics/amplitude.js";
 
 process.env.SERVICE_NAME ??= "worker";
 
 async function main() {
   config();
+  initSentry("worker");
   const boss = await getBoss();
 
   await boss.work<ProcessMeetingJob>(QUEUES.processMeeting, { batchSize: 1, pollingIntervalSeconds: 2 }, async ([job]) => {
@@ -47,6 +50,7 @@ async function main() {
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "Останавливаю worker…");
+    await Promise.all([flushSentry(), flushAnalytics()]);
     await stopBoss();
     await closeDb();
     process.exit(0);

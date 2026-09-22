@@ -20,13 +20,14 @@
     "env:railway": "bash scripts/railway-sync-keys.sh"
   },
   "dependencies": {
-    "@lakonik/shared": "workspace:*",
     "@anthropic-ai/sdk": "^0.125.0",
     "@aws-sdk/client-s3": "^3.1131.0",
     "@aws-sdk/s3-request-presigner": "^3.1131.0",
     "@better-auth/drizzle-adapter": "^1.7.4",
     "@hono/node-server": "^2.1.1",
     "@hono/zod-openapi": "^1.6.3",
+    "@lakonik/shared": "workspace:*",
+    "@sentry/node": "^10.75.1",
     "better-auth": "^1.7.4",
     "docx": "^9.7.1",
     "drizzle-orm": "^0.45.2",

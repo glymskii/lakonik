@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { track } from "../../analytics/amplitude.js";
 import { and, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { streamSSE } from "hono/streaming";
@@ -195,6 +196,7 @@ meetingsRoutes.openapi(
         deviceId: body.deviceId ?? null,
       })
       .returning();
+    track(u.id, body.source === "imported" ? "file_imported" : "recording_started", { template: t.code, hasTemplate: t.code !== UNCLASSIFIED_TEMPLATE_CODE });
     return c.json(summaryDto(m!, t, { hasTranscript: false, hasReport: false, isOwner: true }), 201);
   },
 );
@@ -315,6 +317,7 @@ meetingsRoutes.openapi(
     requireOwner(a);
     await purgeAudio(a.meeting.id).catch((e) => logger.warn(e, "purge при удалении"));
     await db().delete(meetings).where(eq(meetings.id, a.meeting.id));
+    track(c.get("user").id, "meeting_deleted", { status: a.meeting.status });
     return c.json({ ok: true }, 200);
   },
 );
@@ -418,6 +421,7 @@ meetingsRoutes.openapi(
       .returning();
     await enqueueProcessMeeting({ meetingId: a.meeting.id });
     const t = await templateById(m!.templateId);
+    track(c.get("user").id, "recording_finished", { durationSec: durationSec ?? null, segments: m!.segmentCount, template: t.code });
     return c.json(summaryDto(m!, t, { hasTranscript: false, hasReport: false, isOwner: true }), 200);
   },
 );
@@ -510,7 +514,7 @@ meetingsRoutes.openapi(
       if (self && !patch.speakers![self] && me.name?.trim()) patch.speakers = { ...patch.speakers, [self]: me.name.trim() };
       if (self) patch.speakerRoles = { ...(patch.speakerRoles ?? speakerRoles ?? tr.speakerRoles ?? {}), [self]: "ours" };
     }
-    if (confirmed) patch.speakersConfirmedAt = new Date();
+    if (confirmed) { patch.speakersConfirmedAt = new Date(); track(c.get("user").id, "speakers_confirmed", { merges: Object.keys(merges ?? {}).length }); }
     await db().update(transcripts).set(patch).where(eq(transcripts.meetingId, a.meeting.id));
     return c.json(await detailDto(await loadMeetingWithAccess(a.meeting.id, c.get("user"))), 200);
   },
@@ -539,6 +543,7 @@ meetingsRoutes.openapi(
     const [m] = await db().update(meetings).set({ status: "queued", statusDetail: first ? "Составление отчёта" : "Пересборка отчёта", error: null }).where(eq(meetings.id, a.meeting.id)).returning();
     await enqueueProcessMeeting({ meetingId: a.meeting.id, regenerate: true, templateId: body.templateId, effort: body.effort, model: body.draft ? config().ANTHROPIC_MODEL_DRAFT : undefined, instructions: body.instructions });
     const t = await templateById(m!.templateId);
+    track(c.get("user").id, "report_regenerated", { first, template: t.code, withInstructions: !!body.instructions });
     return c.json(summaryDto(m!, t, { hasTranscript: true, hasReport: true, isOwner: true }), 202);
   },
 );
@@ -711,6 +716,7 @@ meetingsRoutes.openapi(
       .insert(shares)
       .values({ meetingId: a.meeting.id, recipientEmail: email, recipientUserId: recipient?.id ?? null, scope: body.scope, createdBy: c.get("user").id })
       .returning();
+    track(c.get("user").id, "meeting_shared", { scope: body.scope, knownUser: !!recipient });
     return c.json({ id: s!.id, recipientEmail: s!.recipientEmail, scope: s!.scope, createdAt: s!.createdAt.toISOString() }, 201);
   },
 );

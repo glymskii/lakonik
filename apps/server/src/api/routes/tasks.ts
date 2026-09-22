@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { track } from "../../analytics/amplitude.js";
 import { and, asc, desc, eq, gt, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { db } from "../../db/client.js";
@@ -131,6 +132,7 @@ tasksRoutes.openapi(
     if (body.status !== undefined) {
       patch.status = body.status;
       patch.doneAt = body.status === "done" ? new Date() : null;
+      if (body.status === "done") track(u.id, "task_done", { isOwner: access.scope === "full" });
     }
     if (body.assigneePersonId !== undefined || body.assigneeName !== undefined) {
       if (body.assigneePersonId) {
