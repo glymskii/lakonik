@@ -22,6 +22,7 @@ const meeting = {
   ownerId: "e2e",
   agencyId: null,
   organizationId: null,
+  orphanedFrom: null,
   templateId: tpl.id,
   templateCode: tpl.code,
   templateVersion: tpl.version,

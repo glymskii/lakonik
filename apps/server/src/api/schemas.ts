@@ -304,6 +304,43 @@ export const DeviceBody = z
   .object({ platform: z.enum(["ios", "android"]), pushToken: z.string().min(10).max(500), appVersion: z.string().max(50).optional() })
   .openapi("DeviceBody");
 
+export const OrgMemberSchema = z
+  .object({ userId: z.string(), name: z.string(), email: z.string(), role: z.enum(["owner", "admin", "member"]), joinedAt: z.string() })
+  .openapi("OrgMember");
+
+export const OrganizationSchema = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    kind: z.enum(["personal", "team"]),
+    plan: z.enum(["free", "enterprise"]),
+    planSeats: z.number().int().nullable(),
+    planUntil: z.string().nullable(),
+    role: z.enum(["owner", "admin", "member"]),
+    allowDomainJoin: z.boolean(),
+    /** Ссылка-приглашение — только для admin/owner */
+    inviteLink: z.string().nullable(),
+    domains: z.array(z.object({ domain: z.string(), verified: z.boolean() })),
+    membersCount: z.number().int(),
+    members: z.array(OrgMemberSchema),
+    keyterms: z.array(z.string()),
+    pendingInvitations: z.array(z.object({ id: z.string().uuid(), email: z.string(), role: z.enum(["owner", "admin", "member"]), expiresAt: z.string() })),
+  })
+  .openapi("Organization");
+
+export const CreateOrgBody = z.object({ name: z.string().trim().min(2).max(80) }).openapi("CreateOrgBody");
+export const PatchOrgBody = z
+  .object({ name: z.string().trim().min(2).max(80).optional(), allowDomainJoin: z.boolean().optional(), keyterms: z.array(z.string().trim().min(1).max(60)).max(300).optional() })
+  .openapi("PatchOrgBody");
+export const InviteBody = z.object({ email: z.string().email(), role: z.enum(["admin", "member"]).default("member") }).openapi("InviteBody");
+export const MemberRoleBody = z.object({ role: z.enum(["admin", "member"]) }).openapi("MemberRoleBody");
+export const RemoveMemberBody = z.object({ transferTo: z.string().optional() }).openapi("RemoveMemberBody");
+export const TransferBody = z.object({ toUserId: z.string() }).openapi("TransferBody");
+export const SuggestedOrgSchema = z.object({ id: z.string().uuid(), name: z.string(), membersCount: z.number().int() }).openapi("SuggestedOrg");
+export const JoinInfoSchema = z
+  .object({ organizationName: z.string(), membersCount: z.number().int(), kind: z.enum(["link", "email"]), alreadyMember: z.boolean().optional() })
+  .openapi("JoinInfo");
+
 export const OrganizationBriefSchema = z
   .object({
     id: z.string().uuid(),

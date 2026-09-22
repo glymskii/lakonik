@@ -7,7 +7,8 @@ import { logger } from "../logger.js";
  */
 export type AnalyticsEvent =
   | "signup" | "login" | "recording_started" | "recording_finished" | "file_imported" | "transcript_ready" | "report_ready"
-  | "report_regenerated" | "speakers_confirmed" | "meeting_shared" | "task_done" | "meeting_deleted" | "account_deleted";
+  | "report_regenerated" | "speakers_confirmed" | "meeting_shared" | "task_done" | "meeting_deleted" | "account_deleted"
+  | "organization_created" | "invite_accepted" | "workspace_selected";
 
 type Props = Record<string, string | number | boolean | null | undefined>;
 

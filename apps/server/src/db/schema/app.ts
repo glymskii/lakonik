@@ -117,6 +117,8 @@ export const meetings = pgTable(
     agencyId: text("agency_id").references(() => agencies.id),
     /** Пространство, которому принадлежит встреча (null только до переноса данных) */
     organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+    /** Прежний владелец, если встреча передана при удалении участника или его аккаунта */
+    orphanedFrom: text("orphaned_from").references(() => user.id, { onDelete: "set null" }),
     templateId: uuid("template_id")
       .notNull()
       .references(() => meetingTemplates.id),

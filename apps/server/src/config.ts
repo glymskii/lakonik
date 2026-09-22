@@ -20,6 +20,8 @@ const schema = z.object({
   PORT: z.coerce.number().default(3000),
   LOG_LEVEL: z.string().default("info"),
   BASE_URL: z.string().url().default("http://localhost:3000"),
+  /** Публичный сайт: ссылки-приглашения /join/<token>, политики */
+  SITE_URL: z.string().url().default("https://lakonik.app"),
   BETTER_AUTH_SECRET: z.string().min(16),
 
   DATABASE_URL: z.string().min(1),

@@ -31,6 +31,19 @@ export async function sendMail(mail: Mail): Promise<void> {
   if (error) throw new Error(`Resend: ${error.message}`);
 }
 
+export function inviteEmail(orgName: string, inviterName: string, link: string) {
+  return {
+    subject: `${inviterName} приглашает вас в «${orgName}» — Lakonik`,
+    text: `${inviterName} приглашает вас в организацию «${orgName}» в Lakonik.\n\nОткройте ссылку на iPhone с установленным приложением: ${link}\n\nЕсли приложения ещё нет — установите Lakonik и откройте ссылку снова. Приглашение действует 14 дней.`,
+    html: `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px">
+  <h2 style="margin:0 0 16px">Приглашение в «${orgName}»</h2>
+  <p>${inviterName} приглашает вас в организацию в Lakonik — записи встреч, расшифровки, отчёты и задачи команды.</p>
+  <p style="margin:24px 0"><a href="${link}" style="background:#1f6fe5;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600">Принять приглашение</a></p>
+  <p style="color:#555">Откройте ссылку на iPhone с установленным приложением. Если приложения ещё нет — установите Lakonik и откройте ссылку снова. Приглашение действует 14 дней.</p>
+</div>`,
+  };
+}
+
 export function otpEmail(otp: string) {
   return {
     subject: `${otp} — код входа в Lakonik`,

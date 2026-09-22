@@ -1,0 +1,2 @@
+ALTER TABLE "meetings" ADD COLUMN "orphaned_from" text;--> statement-breakpoint
+ALTER TABLE "meetings" ADD CONSTRAINT "meetings_orphaned_from_user_id_fk" FOREIGN KEY ("orphaned_from") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;
