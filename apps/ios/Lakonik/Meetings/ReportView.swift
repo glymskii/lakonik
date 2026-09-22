@@ -187,9 +187,9 @@ struct MeetingInfoView: View {
                 Text("Срок отчёта: \(detail.reportSlaHours) ч после встречи (настраивается в Настройках → Сроки)").font(.caption).foregroundStyle(.secondary)
                 LabeledContent("Конфиденциальность", value: detail.confidentiality == "restricted" ? "Ограниченная" : "Стандартная")
             }
-            if !detail.contextFields.isEmpty {
+            if !detail.visibleContextFields.isEmpty {
                 Section("Контекст, введённый перед записью") {
-                    ForEach(detail.contextFields.keys.sorted(), id: \.self) { k in
+                    ForEach(detail.visibleContextFields.keys.sorted(), id: \.self) { k in
                         let label = (template?.specificFields.first { $0.key == k }?.label) ?? (template?.commonFields.first { $0.key == k }?.label) ?? k
                         LabeledContent(label, value: detail.contextFields[k]?.displayText ?? "")
                     }

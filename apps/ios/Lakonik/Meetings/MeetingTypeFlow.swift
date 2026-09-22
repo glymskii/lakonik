@@ -252,7 +252,7 @@ struct ContextFormView: View {
     private func prefill() {
         guard !prefilled, let d = initial else { return }
         prefilled = true
-        for (k, v) in d.contextFields {
+        for (k, v) in d.visibleContextFields {
             switch v {
             case .string(let s): values[k] = s
             case .number(let n): values[k] = n.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(n)) : String(n)

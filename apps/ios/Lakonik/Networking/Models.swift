@@ -701,6 +701,12 @@ struct OrganizationBrief: Codable, Hashable, Identifiable {
     var planTitle: String { plan == "enterprise" ? "Enterprise" : "Free" }
 }
 
+extension MeetingDetail {
+    /// Ключи contextFields, которые пишет сервер (например транскрипт Google Meet) — в интерфейсе не показываются
+    static let serviceContextKeys: Set<String> = ["meetTranscript"]
+    var visibleContextFields: [String: ContextValue] { contextFields.filter { !Self.serviceContextKeys.contains($0.key) } }
+}
+
 struct OrgMember: Codable, Hashable, Identifiable {
     let userId: String
     let name: String
